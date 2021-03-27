@@ -1,0 +1,51 @@
+---
+title: 'surveyreport: Readme'
+author: "Stephan Daus"
+date: "27 3 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+First time installation. 
+```{r}
+#install.packages(c("dplyr", "purrr", "tidyr", "officer", "mschart", ))
+install.packages("devtools")
+devtools::install_github(repo = "sda030/surveyreport")
+```
+
+```{r}
+library(dplyr)
+library(surveyreport)
+df <- create_df_from_surveyxact("inst/example_survey_output.xlsx")
+# Prepare your independent variables as you prefer for the final report text and graphs with interpretable (lower-case) categories. Use labelled::var_labels, etc
+modbatch <- autoreport(df)
+modbatch <- create_infoframe(df)
+modbatch <- add_percent(modbatch)
+modbatch <- add_regression(modbatch)
+modbatch <- add_latent_diff(modbatch)
+
+modbatch <- add_fit_meaning(modbatch)
+modbatch <- add_effect_meaning(modbatch)
+modbatch <- add_percent_meaning(modbatch)
+modbatch <- add_full_meaning(modbatch)
+
+modbatch <- add_percentbar_chart(modbatch)
+modbatch <- add_percentbar_plot(modbatch)
+modbatch <- add_percentbar_rvg(modbatch)
+
+modbatch <- add_forest_chart(modbatch)
+modbatch <- add_forest_plot(modbatch)
+modbatch <- add_forest_rvg(modbatch)
+
+modbatch <- add_bivariate_chart(modbatch)
+modbatch <- add_bivariate_plot(modbatch)
+modbatch <- add_bivariate_rvg(modbatch)
+
+modbatch <- create_report(modbatch)
+modbatch <- create_report_grouped(modbatch)
+
+
+```

@@ -1,0 +1,91 @@
+---
+title: "surveyreport TODO"
+author: "Stephan Daus"
+date: "27 3 2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Overall design
+* Each of the add_* functions should call an underlying hidden function that generates the specified output for a single case, and the add_* function will loop across all rows in the design frame with purrr::pmap() and attach the output using a standard helper function. Then an autoreport-function could do looping itself by only calling underlying functions
+* class-based objects, or just lists for now? 
+
+# create_df_from_surveyxact
+* Remove plyr::dlply
+
+# step_auto_tick_recode
+* Some form of automatic recode of multiple tick-box items where no cross is missing? Or perhaps strongly advice people not to use them?
+
+# create_infoframe
+
+# add_percent
+
+# add_regression
+* Extract dummy recoder?
+# How to distinguish x_var as single latent variable from set of manifest variables?
+# Improve extraction of errors in MplusAutomation::readModels(). New separate function: Extract variables that are failing
+# V2: Rerun without poor variables if NDependent>4: toupper(colnames(rdata)). Separate function to work on output dataframe.
+
+## run_model 
+
+## prepare_mplus_model
+
+## extract_mplus_model
+* Make into broom tidier? Though will be of limited use.
+* cronbach, mcdonald_omega? Or using psych::alpha
+
+## prepare_lavaan_model
+
+# add_latent_diff
+
+# add_fit_meaning
+
+# add_effect_meaning
+
+# add_percent_meaning
+
+# add_full_meaning
+
+# add_percentbar_chart
+
+# add_percentbar_plot, add_percentbar_plot
+
+# add_forest_chart, add_forest_plot, add_forest_rvg
+
+# add_bivariate_chart, add_bivariate_plot, add_bivariate_rvg
+
+# create_report_entry
+
+# create_report
+
+# create_report_grouped
+* group-specific reports with automatic email sending
+
+# utils
+## check_options
+## omitted_recoder
+## print2.rdocx
+* replace utils::zip with officer::unpack_file
+
+## add_element
+## loop across (basically just a wrapper to purrr::pmap)
+
+
+# NAMESPACE
+
+# DESCRIPTION
+
+# Examples and documentation
+
+# Other
+
+parsnip, broom, yardstick extensions for SEM models: 
+https://www.tidymodels.org/learn/develop/models/ and https://www.tidymodels.org/learn/develop/broom/ and https://www.tidymodels.org/learn/develop/metrics/
+easystats extensions (or not, as they don't yet support tidymodels)
+workflow-package extensions
+parsnip, and returns broom, yardstick)
+		
+

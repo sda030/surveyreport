@@ -1,0 +1,30 @@
+importFrom(dplyr, select, case_when, n_distinct, filter, group_by, summarize, n, ungroup, replace, relocate, distinct,
+		   rename_with, rename, mutate, if_else, arrange, count, add_count, bind_rows, slice, pull, full_join)
+importFrom(tidyselect, where, matches, all_of, everything)
+importFrom(purrr, map, pmap, reduce, map_chr, map_lgl, map_int, map2, pwalk, pmap_dfr)
+importFrom(tidyr, separate, unite, pivot_longer, pivot_wider, chop, pack, expand_grid, unpack)
+importFrom(tibble, deframe, as_tibble)
+importFrom(vctrs, as_list_of)
+importFrom(rlang, warn, abort, notify)
+importFrom(glue, glue)
+importFrom(labelled, set_variable_labels, set_value_labels, var_label, to_character, to_labelled, look_for, recode.haven_labelled, remove_labels)
+importFrom(haven, is.labelled, as_factor)
+
+importFrom(plyr, dlply) # Only in create_df_from_surveyxact, replace.
+importFrom(forcats, fct_inorder) #replace
+importFrom(stringr, str_trim) # Replace with gsub
+
+importFrom(readr, read_file, write_file)
+importFrom(MplusAutomation, mplusObject, mplusModeler) #replace as suggest
+#importFrom(lavaan)
+
+
+importFrom(readxl, read_excel, excel_sheets)
+importFrom(officer, read_docx, read_pptx, read_xlsx, docx_dim, body_add_par, print.rdocx, print.rpptx, print.rxlsx, fp_text, fp_border,
+		   add_slide, ph_with, ph_location_fullsize, ph_location_type, add_sheet, body_add_table, table_stylenames, pack_folder, unpack_folder)
+importFrom(mschart, ms_barchart, body_add_chart, chart_data_labels, chart_settings, chart_labels, chart_labels_text, chart_theme, chart_data_fill, chart_data_stroke,
+		   chart_ax_y, chart_ax_x)
+
+import(ggplot2)
+import(progress)
+exportPattern("^[[:alpha:]]+")
