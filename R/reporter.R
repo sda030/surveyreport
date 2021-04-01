@@ -1,679 +1,680 @@
-# TODO: If first variable in a y_var has no response in a category, category order is messed up.
-# TODO: Sorting of variables both within section, but also within a graph/table!
-# TODO: Make function general enough so that it can be used in a pmap-loop for school reports. section1_new_file=TRUE for school reports
-# TODO: Make tables in doc prettier (header formating, left align first column, etc)
+#' Generate Report From Template and Design Frame
+#'
+#' Generates a report from infoframe object. If specifics have not been set per
+#' row in obj$design_frame, will then use global arguments in this function as
+#' defaults. Can optionally be pre-processed with add_percentages(),
+#' add_analyses(), and add_text().
+#'
+#' @param obj A list containing df, var_frame and design_frame, as created by
+#'   create_infoframe().
+#' @param section_divider1,section_divider2 Variable in design_frame that
+#'   specifies under which section (level2) and subsection (level3) in the
+#'   docx-document that the results will be reported.
+#' @param sorting Sorting order for results within a section2
+#' @param y_colour_set Character vector with hex colours for the set of y_var.
+#' @param drop_na_y,drop_na_x Logical, defaults to TRUE. Whether to drop missing
+#'   as a category.
+#' @param prefix_number Whether to add the underlying number index for the
+#'   categories as a prefix in the printed chart and table labels. Useful for
+#'   troubleshooting.
+#' @param remove_empty_y_var Logical, defaults to FALSE. As `reporter()` cannot
+#'   handle rows in design_frame with missing y_var, will drop these rows if
+#'   FALSE (NOT YET IMPLEMENTED). Otherwise aborts.
+#' @param drop_duplicates Logical, defaults to FALSE. If there are duplicate
+#'   rows in design_frame, drop duplicates silently?
+#' @param hide_label_if_less_than Not yet working.
+#' @param font_size Font size. Defaults to 8.
+#' @param round_digits Integer, defaults to 1. Number of decimals in charts and
+#'   tables. Currently not working for charts.
+#' @param show_n_chart Logical, defaults to "caption". Should number of cases in
+#'   a category/group be added? One of "axis" (part of the chart axis text),
+#'   "caption" (summarized and added to the caption), "none" (off) or "auto"
+#'   (caption if no variation, otherwise in axis).
+#' @param show_n_table Same as show_n_chart, but for the tables.
+#' @param show_p_table Show percentage symbol (%) in table header ("axis") or in
+#'   the caption ("caption").
+#' @param create_barplot1 Logical, defaults to TRUE. Percents in each category.
+#' @param create_barplot2 Logical, defaults to TRUE. Percents in each category.
+#' @param create_table1 Logical, defaults to FALSE. Percents in each category.
+#' @param create_table2 Logical, defaults to TRUE. Means for each category.
+#' @param docx Logical, defaults to TRUE. Whether to make Word document.
+#' @param pptx Logical, defaults to FALSE Whether to make PowerPoint document.
+#' @param xlsx Logical, defaults to FALSE Whether to make Excel document.
+#' @param str_pos,str_neg,str_not,str_blank String specifying how relations
+#'   between y and x are to be presented in captions for positive, negative, no
+#'   relations, and for univariates (str_blank).
+#' @param str_table_tag,str_figure_tag String specifying what "Table " and
+#'   "Figure " should be displayed as in captions.
+#' @param path Directory to save file(s).
+#' @param file_prefix Filename prefix (before file extension).
+#' @param docx_template_path,pptx_template_path,xlsx_template_path File path 
+#'    to docx/pptx/xlsx templates.
+#' @param template_styles Either a data frame or filepath with two columns:
+#'   `surveyreport_style` (must be as is), and `template_style` (must fit styles
+#'   in the documents, see NIFUmal_stiler.xlsx for all available).
+#'
+#' @importFrom dplyr select all_of case_when filter rename across n group_by
+#'   ungroup summarize mutate if_else count add_count n_distinct arrange
+#'   rename_with %>%
+#' @importFrom rlang abort warn .data .env  arg_match set_names
+#' @importFrom purrr map_chr map2 map pmap map_lgl
+#' @importFrom readxl read_excel
+#' @importFrom tidyr pivot_longer unite pivot_wider
+#' @importFrom labelled set_variable_labels var_label to_character val_label
+#' @importFrom haven as_factor
+#' @importFrom mschart body_add_chart chart_labels_text
+#' @importFrom officer body_add_par body_add_table add_slide table_stylenames
+#'   ph_with ph_location_fullsize ph_location_type fp_text add_sheet
 
-
-# Version 2.0
-# TODO: Scatter+trend line plots for linear/binary logistic regression models where x_focus is specified
-# TODO: Forest plot for regression model results
-# TODO: Same plots for ggplot2 as for mschart
-# TODO: Method chapter: response rate (opened/completed), broken down by x_var, representativeness given pop_var, map for gsiid
-# TODO: Also export Rmarkdown/html-file?
-
-
-#### Modify xml-files:
-# TODO: Hide axis titles.
-# TODO: Right-align axis text by modifying xml-raw data
-# TODO: Drop data labels if smaller than 5%
-# Insert this: dLbl><c:idx val=X_value/><c:delete val="1"/><c:extLst><c:ext uri="{CE6537A1-D6FC-4f65-9D91-7224C49458BB}" xmlns:c15="http://schemas.microsoft.com/office/drawing/2012/chart"/><c:ext uri="{C3380CC4-5D6E-409C-BE32-E72D297353CC}" xmlns:c16="http://schemas.microsoft.com/office/drawing/2014/chart"><c16:uniqueId val="{00000000-BC21-437A-B275-29C6E34D2EC4}"/></c:ext></c:extLst></c:dLbl><c:
-# After this: </a:srgbClr></a:solidFill></a:ln><a:effectLst/></c:spPr><c:invertIfNegative val="0"/><c:dLbls><c:
-
-# TODO: Strip off all unnecessary dependencies
-# TODO: Documentation
-# TODO: Excel template
-
-# out of my control:
-# TODO: Excel output, table and chart into Excel
-# TODO: Crashes if file is open (https://github.com/davidgohel/officer/issues/349)
-# TODO: Also file doesn't open if a crashed Word app is open...
-# TODO: Non-ASCII letters (https://github.com/ardata-fr/mschart/issues/57), but workaround works.
-
-
-#' @param df A dataframe with raw responses (one row is a respondent, columns are variables)
-#' @param design_frame A dataframe (or tibble) with the variable combinations to run. For instance based on output from all_mplus_analyses, indicating which combinations of X and Y to allow. data.frame(X=c(), Y=c(), group=c()). If not given, produce all combinations found in y_var
+#' @import officer
+#' @return design_frame
+#' @export
+#'
 #' @examples
-
-
 reporter <-
-	function(df, design_frame,  var_frame,
-
+	function(obj,
 			 section_divider1 = NULL,
 			 section_divider2 = NULL,
 			 sorting = NULL,
 			 y_colour_set=NULL, drop_na_y=TRUE, drop_na_x=TRUE, prefix_number=FALSE, remove_empty_y_var=FALSE, drop_duplicates=TRUE,
-			 hide_label_if_less_than=0, font_size=8, round_digits=1, show_n_chart="caption", show_n_table="caption",
-			 show_p_table = "axis",
+			 hide_label_if_less_than=0, font_size=8, round_digits=1, 
+			 show_n_chart=c("caption", "axis", "auto", "none"), 
+			 show_n_table=c("caption", "axis", "auto", "none"), 
+			 show_p_table = c("caption", "axis", "auto", "none"), 
 			 create_barplot1=TRUE, create_barplot2=FALSE, create_table1=TRUE, create_table2=FALSE,
-
+			 
 			 docx=TRUE, pptx=FALSE, xlsx=FALSE,
-			 str_pos = " <+> ", str_neg = " <-> ", str_not = " <0> ", str_blank = 0, str_table_tag="Tabell ", str_figure_tag="Figur ",
-
-			 path=getwd(), file_prefix="uni",
-			 docx_template_path = "C:/Users/py128/OneDrive - NIFU/AuxR/tidyreport/NIFUmal_tom.docx",
-			 pptx_template_path = "C:/Users/py128/OneDrive - NIFU/AuxR/tidyreport/NIFUmal_tom.pptx",
-			 log_path=paste0(getwd(), "log.txt")) {
-
-	library(dplyr)
-	library(tidyr)
-	library(labelled)
-	library(officer)
-	library(mschart)
-	library(progress)
-
-
-
-	built_in_colour_set <-
-		c(red="#C82D49", black = "#363636", beige="#EDE2D2", blue="#2D8E9F", purple="#DBD2E0")
-	section_options <- c('y_group_label', 'y_group', 'y_var', 'y_label', 'y_type',
-						 'x_group_label', 'x_group', 'x_var', 'x_label', 'x_type', 'section1', 'section2')
-	sorting_options <- c(section_options, "y_pos", "x_pos",
-						 "top1", "average", "sum_high_cat", "sum_low_cat", "est", "pval")
-	show_n_options <- c("axis", "caption", "auto", "none")
-	added_parts <- c()
-
-	# Early abort, warnings and messages.
-	{
-	if(!is.data.frame(df)) rlang::abort("df is not a data.frame")
-	if(!is.data.frame(design_frame)) rlang::abort("design_frame is not a data.frame")
-	if(nrow(design_frame)==0L) rlang::abort("Why do you give me an empty design_frame?")
-	if(is.null(design_frame[["y_var"]])) rlang::abort("design_frame must have at least a 'y_var' variable")
-
-	empty_y_var <- design_frame[["y_var"]] %>% purrr::map_int(.f = ~length(.))
-	if(!remove_empty_y_var & any(!empty_y_var)) {
-		rlang::abort("Seems there are empty 'y_var' entries. Please remove these first using:
+			 str_pos = " <+> ", str_neg = " <-> ", str_not = " <0> ", str_blank = 0, 
+			 
+			 str_table_tag="Tabell ", str_figure_tag="Figur ",
+			 
+			 path = getwd(), file_prefix="uni",
+			 docx_template_path = "template/NIFUmal_tom.docx",
+			 pptx_template_path = "template/NIFUmal_tom.pptx",
+			 xlsx_template_path = "template/NIFUmal_tom.xlsx",
+			 template_styles = "template/NIFUmal_stiler.xlsx") {
+		
+		template_styles <- 
+			if(is.data.frame(template_styles)) {
+				template_styles 
+			} else if(!is.null(template_styles) && file.exists(template_styles)) {
+				readxl::read_excel(template_styles)
+			}
+		if(length(names(template_styles)) != 2L || !all(c("surveyreport_style", "template_style") %in% names(template_styles))) {
+			rlang::abort(c("Unexpected Column Names in template_styles", 
+						   i = "Argument `template_styles` must refer to a data frame with columns surveyreport_style and template_style.",
+						   x = paste0("Supplied data frame contains c(", paste0(names(template_styles), collapse=", "), ").")))
+		}
+		grab_temp_style <- function(temp_styles=template_styles, style) {
+			dplyr::filter(temp_styles, .data$surveyreport_style == .env$style) %>% pull(.data$template_style)
+		}
+		heading_1 <- grab_temp_style(style="heading_1")
+		heading_2 <- grab_temp_style(style="heading_2")
+		heading_3 <- grab_temp_style(style="heading_3")
+		paragraph <- grab_temp_style(style="paragraph")
+		figure <- grab_temp_style(style="figure")
+		figure_caption <- grab_temp_style(style="figure_caption")
+		table_body <- grab_temp_style(style="table_body")
+		table_caption <- grab_temp_style(style="table_caption")
+		pptx_layout <- grab_temp_style(style="pptx_layout")
+		pptx_master <- grab_temp_style(style="pptx_master")
+		
+		built_in_colour_set <-
+			c(red="#C82D49", black = "#363636", beige="#EDE2D2", blue="#2D8E9F", purple="#DBD2E0")
+		section_options <- c('y_group_label', 'y_group', 'y_var', 'y_label', 'y_type',
+							 'x_group_label', 'x_group', 'x_var', 'x_label', 'x_type', 'section1', 'section2')
+		sorting_options <- c(section_options, "y_pos", "x_pos",
+							 "top1", "average", "sum_high_cat", "sum_low_cat", "est", "pval")
+		show_n_options <- c("caption", "axis", "auto", "none")
+		show_n_chart <- rlang::arg_match(show_n_chart)
+		show_n_table <- rlang::arg_match(show_n_table)
+		show_p_table <- rlang::arg_match(show_p_table)
+		
+		added_parts <- c()
+		
+		# Early abort, warnings and messages.
+		{
+			if(!is.data.frame(df)) rlang::abort("df is not a data.frame")
+			if(!is.data.frame(design_frame)) rlang::abort("design_frame is not a data.frame")
+			if(nrow(design_frame)==0L) rlang::abort("Why do you give me an empty design_frame?")
+			if(is.null(design_frame[["y_var"]])) rlang::abort("design_frame must have at least a 'y_var' variable")
+			
+			empty_y_var <- design_frame[["y_var"]] %>% purrr::map_int(.f = ~length(.))
+			if(!remove_empty_y_var & any(!empty_y_var)) {
+				rlang::abort("Seems there are empty 'y_var' entries. Please remove these first using:
 					 `my_design_frame %>% filter(pull(y_var) %>% lapply(length) %>% unlist()>0)`")
-	}
-	if(drop_duplicates) {
-		design_frame <- unique(design_frame)
-	}
-
-	if(is.null(design_frame[["y_label"]])) {
-		design_frame[["y_label"]] <- design_frame[["y_var"]]
-		added_parts <- c(added_parts, "y_label")
-	}
-	if(is.null(design_frame[["y_group"]])) {
-		design_frame[["y_group"]] <- design_frame[["y_var"]] %>% purrr::map(.x = ., .f = ~paste0(.,collapse=","))
-		added_parts <- c(added_parts, "y_group")
-	}
-	if(is.null(design_frame[["y_group_label"]])) {
-		design_frame[["y_group_label"]] <- design_frame[["y_var"]] %>% purrr::map_chr(.x = ., .f = ~paste0(.,collapse=","))
-		added_parts <- c(added_parts, "y_group_label")
-	}
-	if(is.null(design_frame[["x_var"]])) {
-		design_frame[["x_var"]] <- NA_character_
-		added_parts <- c(added_parts, "x_var")
-	}
-	if(is.null(design_frame[["x_label"]])) {
-		design_frame[["x_label"]] <- design_frame[["x_var"]]
-		added_parts <- c(added_parts, "x_label")
-	}
-	if(is.null(design_frame[["x_group"]])) {
-		design_frame[["x_group"]] <- design_frame[["x_var"]] %>% purrr::map_chr(.x = ., .f = ~paste0(.,collapse=","))
-		added_parts <- c(added_parts, "x_group")
-	}
-	if(is.null(design_frame[["x_group_label"]])) {
-		design_frame[["x_group_label"]] <- design_frame[["x_var"]] %>% purrr::map_chr(.x = ., .f = ~paste0(.,collapse=","))
-		added_parts <- c(added_parts, "x_group_label")
-	}
-
-
-
-
-	if(is.null(design_frame[["section1"]])) {
-		if(!is.null(section_divider1) && (length(section_divider1) != 1L || !section_divider1 %in% section_options)) {
-			rlang::abort(paste0("Global argument `section_divider1=`", " must be a string length 1, and one of c(", paste0(section_options, collapse=","), ") or NULL when variable 'section1' in design_frame is not provided."))
-		}
-		design_frame[["section1"]] <- if(!is.null(section_divider1)) design_frame[[section_divider1]] else NA_character_
-		added_parts <- c(added_parts, "section1")
-	}
-	if(is.null(design_frame[["section2"]])) {
-		if(!is.null(section_divider2) && (length(section_divider2) != 1L || !section_divider2 %in% section_options)) {
-			rlang::abort(paste0("Global argument `section_divider2=`", " must be a string length 1, and one of c(", paste0(section_options, collapse=","), ") or NULL when variable 'section2' in design_frame is not provided."))
-		}
-		design_frame[["section2"]] <- if(!is.null(section_divider2)) design_frame[[section_divider2]] else NA_character_
-		added_parts <- c(added_parts, "section2")
-	}
-
-
-	if(is.null(design_frame[["sort_order"]])) {
-		if(!is.null(sorting) && (length(sorting)!=1L || !sorting %in% sorting_options)) {
-			rlang::abort(paste0("Global argument `sorting=`", " must be a string length 1, and one of c(", paste0(sorting_options, collapse = ", "), ") or NULL when variable 'sort_order' in design_frame is not provided."))
-		}
-		design_frame[["sort_order"]] <- if(!is.null(sorting)) sorting else "y_var"
-		added_parts <- c(added_parts, "sort_order")
-	}
-
-	if(is.null(design_frame[["y_colour_set"]])) {
-		if(!is.null(y_colour_set) && !all(areColors(y_colour_set))) {
-			rlang::abort(paste0("Global argument `y_colour_set=`", " must be a set of hex-colours, or NULL when variable 'y_colour_set' in design_frame is not provided."))
-		}
-		y_colour_set_replacement <- if(!is.null(y_colour_set)) y_colour_set else get_colour_set(n_colours_needed=20, user_colour_set=built_in_colour_set)
-		design_frame[["y_colour_set"]] <- purrr::map(1:nrow(design_frame), function(i) y_colour_set_replacement)
-		added_parts <- c(added_parts, "y_colour_set")
-	}
-	if(is.null(design_frame[["x_colour_set"]])) {
-		if(!is.null(x_colour_set) && !all(areColors(x_colour_set))) {
-			rlang::abort(paste0("Global argument `x_colour_set=`", " must be a set of hex-colours, or NULL when variable 'x_colour_set' in design_frame is not provided."))
-		}
-		x_colour_set_replacement <- if(!is.null(x_colour_set)) x_colour_set else get_colour_set(n_colours_needed=20, user_colour_set=built_in_colour_set)
-		design_frame[["x_colour_set"]] <- purrr::map(1:nrow(design_frame), function(i) x_colour_set_replacement)
-		added_parts <- c(added_parts, "x_colour_set")
-	}
-	# Return warnings
-	if(length(added_parts)>0L) rlang::warn(paste0("Added parts that were missing in design_frame: ", paste0(added_parts, collapse=",")))
-
-	design_frame <- check_options(df = design_frame, df_var = "est", global_default = NA_real_, options = numeric())
-	design_frame <- check_options(df = design_frame, df_var = "pval", global_default = NA_real_, options = numeric())
-	design_frame <- check_options(df = design_frame, df_var = "drop_na_y", global_default = drop_na_y, options = c(T,F))
-	design_frame <- check_options(df = design_frame, df_var = "drop_na_x", global_default = drop_na_x, options = c(T,F))
-	design_frame <- check_options(df = design_frame, df_var = "prefix_number", global_default = prefix_number, options = c(T,F))
-	design_frame <- check_options(df = design_frame, df_var = "hide_label_if_less_than", global_default = hide_label_if_less_than, options = numeric())
-	design_frame <- check_options(df = design_frame, df_var = "font_size", global_default = font_size, options = 0:72)
-	design_frame <- check_options(df = design_frame, df_var = "round_digits", global_default = round_digits, options = -3:3)
-	design_frame <- check_options(df = design_frame, df_var = "show_n_chart", global_default = show_n_chart, options = show_n_options)
-	design_frame <- check_options(df = design_frame, df_var = "show_p_table", global_default = show_p_table, options = show_n_options)
-	design_frame <- check_options(df = design_frame, df_var = "create_barplot1", global_default = create_barplot1, options = c(T,F))
-	design_frame <- check_options(df = design_frame, df_var = "create_barplot2", global_default = create_barplot2, options = c(T,F))
-	design_frame <- check_options(df = design_frame, df_var = "create_table1", global_default = create_table1, options = c(T,F))
-	design_frame <- check_options(df = design_frame, df_var = "create_table2", global_default = create_table2, options = c(T,F))
-	design_frame <- check_options(df = design_frame, df_var = "pptx", global_default = pptx, options = c(T,F))
-	design_frame <- check_options(df = design_frame, df_var = "docx", global_default = docx, options = c(T,F))
-	design_frame <- check_options(df = design_frame, df_var = "xlsx", global_default = xlsx, options = c(T,F))
-
-	}
-
-	val_labels(df) <-
-		val_labels(df) %>%
-		purrr::map2(.x = ., .y=names(.), .f=function(x, y) {
-			if(!is.null(x) && any(grepl("<|>", names(x)))) {
-				rlang::warn(paste0("Current version doesn't handle special characters `<` or `>` in labels. Will remove these in ", y))
-				names(x)<- gsub("<|>", "", names(x))
 			}
-			x
-		})
-
-
-
-	## Create template files. SHOULD THIS BE GENERALIZED SO THAT OTHER TEMPLATES ARE POSSIBLE? THEN SUBMIT DOCUMENT TO FUNCTION.
-	# doc <- tempfile(pattern = "doc_", fileext = ".docx")
-	# download.file("https://nifu.no/nifu/rapportmal/NIFUmal_tom.docx", destfile = doc, mode = "wb", quiet = T)
-	doc <- officer::read_docx(path = docx_template_path)
-	doc_dim <- officer::docx_dim(doc)
-	img_width <- doc_dim$page[["width"]] - doc_dim$margins[["left"]] - doc_dim$margins[["right"]]
-	img_height_max <- doc_dim$page[["height"]] - doc_dim$margins[["top"]] - doc_dim$margins[["bottom"]] - 2
-
-	# ppt <- tempfile(pattern = "ppt_", fileext = ".pptx")
-	# download.file("https://nifu.no/nifu/rapportmal/NIFUmal_tom.pptx", destfile = ppt, mode = "wb", quiet = T)
-	ppt <- officer::read_pptx(path = pptx_template_path)
-	xls <- officer::read_xlsx(path = xlsx_template_path)
-
-
-	design_frame <-
-		design_frame %>%
-		dplyr::arrange(.data[["section1"]], .data[["section2"]], .data[["sort_order"]]) %>%
-		dplyr::mutate(rownumber = 1:nrow(.))
-
-	pb <- progress::progress_bar$new(format = "[:bar] :current/:total (:percent)", total = nrow(design_frame))
-	pb$tick(0)
-
-
-	doc <<-
-		officer::body_add_par(x = doc, value = "Results", style = "NIFU_Overskrift 1") %>%
-		officer::body_add_par(x = ., value = "", style = "NIFU_Normal første")
-
-	out <- purrr::map(unique(design_frame[["section1"]]), .f = function(sec1) {
-		if(!is.na(sec1)) {
+			if(drop_duplicates) {
+				design_frame <- unique(design_frame)
+			}
+			
+			if(is.null(design_frame[["y_label"]])) {
+				design_frame[["y_label"]] <- design_frame[["y_var"]]
+				added_parts <- c(added_parts, "y_label")
+			}
+			if(is.null(design_frame[["y_group"]])) {
+				design_frame[["y_group"]] <- design_frame[["y_var"]] %>% purrr::map(.x = ., .f = ~paste0(.,collapse=","))
+				added_parts <- c(added_parts, "y_group")
+			}
+			if(is.null(design_frame[["y_group_label"]])) {
+				design_frame[["y_group_label"]] <- design_frame[["y_var"]] %>% purrr::map_chr(.x = ., .f = ~paste0(.,collapse=","))
+				added_parts <- c(added_parts, "y_group_label")
+			}
+			if(is.null(design_frame[["x_var"]])) {
+				design_frame[["x_var"]] <- NA_character_
+				added_parts <- c(added_parts, "x_var")
+			}
+			if(is.null(design_frame[["x_label"]])) {
+				design_frame[["x_label"]] <- design_frame[["x_var"]]
+				added_parts <- c(added_parts, "x_label")
+			}
+			if(is.null(design_frame[["x_group"]])) {
+				design_frame[["x_group"]] <- design_frame[["x_var"]] %>% 
+					purrr::map_chr(.x = ., .f = ~paste0(.,collapse=","))
+				added_parts <- c(added_parts, "x_group")
+			}
+			if(is.null(design_frame[["x_group_label"]])) {
+				design_frame[["x_group_label"]] <- design_frame[["x_var"]] %>% 
+					purrr::map_chr(.x = ., .f = ~paste0(.,collapse=","))
+				added_parts <- c(added_parts, "x_group_label")
+			}
+			
+			
+			
+			
+			if(is.null(design_frame[["section1"]])) {
+				if(!is.null(section_divider1) && (length(section_divider1) != 1L || !section_divider1 %in% section_options)) {
+					rlang::abort(paste0("Global argument `section_divider1=`", " must be a string length 1, and one of c(", paste0(section_options, collapse=","), ") or NULL when variable 'section1' in design_frame is not provided."))
+				}
+				design_frame[["section1"]] <- if(!is.null(section_divider1)) design_frame[[section_divider1]] else NA_character_
+				added_parts <- c(added_parts, "section1")
+			}
+			if(is.null(design_frame[["section2"]])) {
+				if(!is.null(section_divider2) && (length(section_divider2) != 1L || !section_divider2 %in% section_options)) {
+					rlang::abort(paste0("Global argument `section_divider2=`", " must be a string length 1, and one of c(", paste0(section_options, collapse=","), ") or NULL when variable 'section2' in design_frame is not provided."))
+				}
+				design_frame[["section2"]] <- if(!is.null(section_divider2)) design_frame[[section_divider2]] else NA_character_
+				added_parts <- c(added_parts, "section2")
+			}
+			
+			
+			if(is.null(design_frame[["sort_order"]])) {
+				if(!is.null(sorting) && (length(sorting)!=1L || !sorting %in% sorting_options)) {
+					rlang::abort(paste0("Global argument `sorting=`", " must be a string length 1, and one of c(", paste0(sorting_options, collapse = ", "), ") or NULL when variable 'sort_order' in design_frame is not provided."))
+				}
+				design_frame[["sort_order"]] <- if(!is.null(sorting)) sorting else "y_var"
+				added_parts <- c(added_parts, "sort_order")
+			}
+			
+			# if(is.null(design_frame[["y_colour_set"]])) {
+			# 	if(!is.null(y_colour_set) && !all(is_colour(design_frame[["y_colour_set"]]))) {
+			# 		rlang::abort(paste0("Global argument `y_colour_set=`", " must be a set of hex-colours, or NULL when variable 'y_colour_set' in design_frame is not provided."))
+			# 	}
+			# 	y_colour_set_replacement <- if(!is.null(y_colour_set)) y_colour_set else get_colour_set(n_colours_needed=20, user_colour_set=built_in_colour_set)
+			# 	design_frame[["y_colour_set"]] <- purrr::map(1:nrow(design_frame), function(i) y_colour_set_replacement)
+			# 	added_parts <- c(added_parts, "y_colour_set")
+			# }
+			# 
+			# if(is.null(design_frame[["x_colour_set"]])) {
+			# 	if(!is.null(design_frame[["x_colour_set"]]) && !all(is_colour(design_frame[["x_colour_set"]]))) {
+			# 		rlang::abort(paste0("Global argument `x_colour_set=`", " must be a set of hex-colours, or NULL when variable 'x_colour_set' in design_frame is not provided."))
+			# 	}
+			# 	x_colour_set_replacement <- if(!is.null(x_colour_set)) x_colour_set else get_colour_set(n_colours_needed=20, user_colour_set=built_in_colour_set)
+			# 	design_frame[["x_colour_set"]] <- purrr::map(1:nrow(design_frame), function(i) x_colour_set_replacement)
+			# 	added_parts <- c(added_parts, "x_colour_set")
+			# }
+			# Return warnings
+			if(length(added_parts)>0L) rlang::warn(paste0("Added parts that were missing in design_frame: ", paste0(added_parts, collapse=",")))
+			
+			design_frame <- check_options(df = design_frame, df_var = "est", global_default = NA_real_, options = numeric())
+			design_frame <- check_options(df = design_frame, df_var = "pval", global_default = NA_real_, options = numeric())
+			design_frame <- check_options(df = design_frame, df_var = "drop_na_y", global_default = drop_na_y, options = c(TRUE,FALSE))
+			design_frame <- check_options(df = design_frame, df_var = "drop_na_x", global_default = drop_na_x, options = c(TRUE,FALSE))
+			design_frame <- check_options(df = design_frame, df_var = "prefix_number", global_default = prefix_number, options = c(TRUE,FALSE))
+			design_frame <- check_options(df = design_frame, df_var = "hide_label_if_less_than", global_default = hide_label_if_less_than, options = numeric())
+			design_frame <- check_options(df = design_frame, df_var = "font_size", global_default = font_size, options = 0:72)
+			design_frame <- check_options(df = design_frame, df_var = "round_digits", global_default = round_digits, options = -3:3)
+			design_frame <- check_options(df = design_frame, df_var = "show_n_chart", global_default = show_n_chart, options = show_n_options)
+			design_frame <- check_options(df = design_frame, df_var = "show_p_table", global_default = show_p_table, options = show_n_options)
+			design_frame <- check_options(df = design_frame, df_var = "create_barplot1", global_default = create_barplot1, options = c(TRUE,FALSE))
+			design_frame <- check_options(df = design_frame, df_var = "create_barplot2", global_default = create_barplot2, options = c(TRUE,FALSE))
+			design_frame <- check_options(df = design_frame, df_var = "create_table1", global_default = create_table1, options = c(TRUE,FALSE))
+			design_frame <- check_options(df = design_frame, df_var = "create_table2", global_default = create_table2, options = c(TRUE,FALSE))
+			design_frame <- check_options(df = design_frame, df_var = "pptx", global_default = pptx, options = c(TRUE,FALSE))
+			design_frame <- check_options(df = design_frame, df_var = "docx", global_default = docx, options = c(TRUE,FALSE))
+			design_frame <- check_options(df = design_frame, df_var = "xlsx", global_default = xlsx, options = c(TRUE,FALSE))
+			
+		}
+		
+		labelled::val_labels(df) <-
+			labelled::val_labels(df) %>%
+			purrr::map2(.x = ., .y=names(.), .f=function(x, y) {
+				if(!is.null(x) && any(grepl("<|>", names(x)))) {
+					rlang::warn(paste0("Current version doesn't handle special characters `<` or `>` in labels. Will remove these in ", y))
+					names(x)<- gsub("<|>", "", names(x))
+				}
+				x
+			})
+		
+		
+		
+		doc <- officer::read_docx(path = docx_template_path)
+		doc_dim <- officer::docx_dim(doc)
+		img_width <- doc_dim$page[["width"]] - doc_dim$margins[["left"]] - doc_dim$margins[["right"]]
+		img_height_max <- doc_dim$page[["height"]] - doc_dim$margins[["top"]] - doc_dim$margins[["bottom"]] - 2
+		ppt <- officer::read_pptx(path = pptx_template_path)
+		xls <- officer::read_xlsx(path = xlsx_template_path)
+		
+		
+		create_report_entry <- 
+			function(df, rownumber, 
+					 y_var, y_label, y_group, y_group_label, y_colour_set, drop_na_y,
+					 x_var, x_label, x_group, x_group_label, x_colour_set, drop_na_x,
+					 est, pval, section1, section2, sort_order,
+					 prefix_number, hide_label_if_less_than, font_size, round_digits, show_n_chart,
+					 create_barplot1, create_barplot2, create_table1, create_table2, 
+					 pptx, docx, xlsx, ...) {
+				
+				
+				
+				# Early abort, warnings and messages. These could be moved even further up front?
+				if(!is.data.frame(df)) rlang::abort("df is not a data frame.")
+				y_var_unavail <- y_var[!y_var %in% colnames(df)]
+				if(length(y_var_unavail) > 0L) {
+					rlang::abort(c("Unavailable variables:",
+								   i = "`y_var` must be found among df column names.",
+								   x = paste0("Following y_var not found in df", paste0(y_var_unavail, collapse=","), ".")))
+				}
+				
+				problem_singular <- 
+					dplyr::select(df, dplyr::all_of(.env$y_var)) %>%
+					dplyr::select(dplyr::all_of(names(.)[purrr::map_lgl(., .f = ~all(is.na(.x)))])) %>%
+					names()
+				
+				if(length(problem_singular)>0L) {
+					rlang::warn(paste0("There is only NA in ", paste0(problem_singular, collapse=","), ". Will skip it."))
+					return()
+				}
+				
+				if(is.null(x_var)) x_var <- NA_character_
+				if(!is.na(x_var)) {
+					
+					if(!is.character(x_var) | !length(x_var) %in% 0:1) {
+						
+						rlang::abort(c("Current version only accepts x_var as a single string per row.",
+									   i=paste0("When y_var is ", paste0(y_var, collapse=","), ","),
+									   x=paste0("there is a problem with x_var: ", paste0(x_var, collapse=",")))) 
+					}
+					if(any(!x_var %in% names(df))) {
+						rlang::abort(message = paste0("Following x_var not found in df:", x_var))
+					}
+					
+				}
+				
+				if(any(is.na(y_colour_set)) || !all(is_colour(y_colour_set))) {
+					rlang::warn("No valid colours provided. Using default.") # SHOULD THIS NOT ALREADY SET THESE COLOURS??
+				}
+				
+				
+				# Create title
+				if(length(y_var) == 1L & length(y_label) == 1L) y_group_label <- paste0(y_group_label, " - ", y_label)
+				
+				title <- dplyr::case_when(is.na(.env$x_var) || is.na(.env$est) || is.na(.env$pval) ~ .env$y_group_label,
+										  .env$est > 0 & .env$pval<.05 ~ paste0(.env$y_group_label, .env$str_pos, paste0(.env$x_label, collapse="_")),
+										  .env$est < 0 & .env$pval<.05 ~ paste0(.env$y_group_label, .env$str_neg, paste0(.env$x_label, collapse="_")),
+										  .env$pval >= .05 | .env$est == 0 ~ paste0(.env$y_group_label, .env$str_not, paste0(.env$x_label, collapse="_")))
+				
+				tab <-
+					df %>%
+					dplyr::select(dplyr::all_of(c(unname(.env$y_var), if(!is.na(.env$x_var)) .env$x_var))) %>%
+					labelled::set_variable_labels(.labels = rlang::set_names(.env$y_label, nm=unname(.env$y_var)) %>% as.list()) %>%
+					rlang::set_names(nm = ifelse(nchar(labelled::var_label(., unlist = T))==0L | colnames(.) %in% .env$x_var,
+												 colnames(.), labelled::var_label(., unlist = T)))
+				
+				if(!is.na(x_var) && length(y_var)>1) {
+					rlang::warn("When x_var is specified, barcharts are currently limited to single-item batteries. Omitting barchart1")
+				} else {
+					
+					
+					tab_long1 <-
+						tab %>%
+						{if(is.na(x_var)) tidyr::pivot_longer(., cols = dplyr::all_of(.env$y_label), names_to = "var", values_to = "val") else {
+							dplyr::rename(., val={y_label}, var={x_var})}} %>%
+						dplyr::mutate(var = labelled::to_character(.data$var),
+									  category = labelled::to_character(.data$val),
+									  val = as.integer(haven::as_factor(.data$val))) %>% # Problem here if first variable lacks a category
+						{if(drop_na_y) dplyr::filter(., !is.na(.data$category)) else .} %>%
+						{if(!drop_na_y) dplyr::mutate(., category = dplyr::if_else(is.na(.data$category), "<NA>", .data$category)) else .} %>%
+						{if(drop_na_y) dplyr::filter(., !is.na(.data$val)) else .} %>%
+						{if(drop_na_x & !is.na(x_var)) dplyr::filter(., !is.na(.data$var)) else .} %>%
+						{if(!drop_na_x | is.na(x_var)) dplyr::mutate(., var = dplyr::if_else(is.na(.data$var), "<NA>", .data$var))} %>%
+						dplyr::add_count(.data$var, name = "n_per_var") %>%
+						dplyr::count(.data$var, .data$n_per_var, .data$val, .data$category, name = "n_per_var_val") %>%
+						dplyr::mutate(percent = round(.data$n_per_var_val/.data$n_per_var, 3)) %>%
+						{if(show_n_chart=="axis" |
+							(show_n_chart=="auto" &
+							 dplyr::n_distinct(.[["n_per_var"]]) > 1L)) tidyr::unite(., col = "var", c(.data$var, .data$n_per_var), sep = " (N=", remove = TRUE, na.rm = TRUE) %>%
+								dplyr::mutate(var=paste0(.data$var, ")")) else .} %>%
+						{if(prefix_number) tidyr::unite(., col = "category", c(.data$val, .data$category), sep = ": ", remove = FALSE) else .} %>%
+						dplyr::arrange(.data$val) %>%
+						dplyr::mutate(category = factor(.data$category, levels = unique(.data$category), ordered = TRUE)) %>% # Problem here if first variable lacks a category
+						dplyr::arrange(.data$var, .data$val)
+					
+					
+					### THIS WILL FAIL IF NO tab_long1 HAS BEEN CREATED BUT NEEDED LATER!
+					caption_suffix <- paste0(". ", title,
+											 if(show_n_chart=="caption" |
+											    (show_n_chart == "auto" & dplyr::n_distinct(range(tab_long1$n_per_var))==1L)) {
+											 	paste0(" N=[", paste0(unique(range(tab_long1$n_per_var)), collapse="-"), "]")
+											 })
+					
+					# {if(sort=="alphabetical") dplyr::arrange(., if(desc) desc(var) else var, val) else .} %>%
+					# {if(sort=="sum_upper_categories") dplyr::group_by(., var) %>%
+					# 		dplyr::mutate(sort_var = ifelse(category = )) %>%
+					# 		dplyr::arrange(if(desc) desc(sort_var) else sort_var, val) else .} %>%
+					# {if(sort=="alphabetical") dplyr::arrange(., if(desc) desc(var) else var, val) else .} %>%
+					# {if(sort=="alphabetical") dplyr::arrange(., if(desc) desc(var) else var, val) else .} %>%
+					#"average", "sum_upper_categories", "alphabetical", "sum_lower_categories", "significance",
+					
+					if(create_barplot1) {
+						
+						
+						barplot1 <- ms_percentbar(df = tab_long1, y_var = "percent", x_var="var",
+												  means = FALSE, f_size = font_size, user_colours=y_colour_set)
+						
+						if(docx) {
+							n_vars1 <- length(unique(barplot1[["data"]][["var"]]))
+							doc <<-
+								mschart::body_add_chart(x = doc, width = img_width, height = min(img_height_max, n_vars1*7/25+150/100), style = figure,
+														chart = mschart::chart_labels_text(x = barplot1, values=officer::fp_text(font.size=5))) %>%
+								officer::body_add_par(x = ., value = paste0(str_figure_tag, rownumber, if(create_barplot2) "a", caption_suffix), style = figure_caption) %>%
+								officer::body_add_par(x = ., value = "", style = paragraph)
+						}
+						
+						if(pptx) {
+							ppt <<-
+								officer::add_slide(ppt, layout = pptx_layout, master = pptx_master) %>%
+								officer::ph_with(x = ., value = barplot1, location = officer::ph_location_fullsize()) %>%
+								officer::ph_with(x = ., value = paste0(str_figure_tag, rownumber, if(create_barplot2) "a", caption_suffix),
+												 location = officer::ph_location_type(type = "ftr"))
+						}
+					}
+					
+					
+					if(create_table1) {
+						table1 <-
+							tab_long1 %>%
+							dplyr::select(-dplyr::all_of("val", "n_per_var_val")) %>%
+							dplyr::mutate(percent = .data$percent*100) %>%
+							{if(show_n_table != "axis") dplyr::select(., -dplyr::all_of("n_per_var")) else dplyr::rename(., N=.data$n_per_var)} %>%
+							dplyr::rename_with(.cols = dplyr::all_of("var"), .fn = ~ y_group_label) %>%
+							tidyr::pivot_wider(names_from = all_of("category"), values_from = all_of("percent")) %>%
+							{if(show_p_table == "axis") dplyr::rename_with(., .cols = -1, ~ paste0(., " (%)")) else .}
+						
+						if(xlsx) {
+							table1 <<-
+								officer::add_sheet(x = table1, label = paste0(y_var, if(!is.na(x_var)) x_var, collapse="_"))
+						}
+						
+						df_display1 <-
+							table1 %>%
+							dplyr::mutate(dplyr::across(dplyr::all_of(names(.)[purrr::map_lgl(.x = ., .f = ~all(is.na(x)))]),
+														~gsub("\\.", ",", round(replace(., is.na(.), str_blank), digits = round_digits))))
+						
+						if(docx) {
+							
+							doc <<-
+								officer::body_add_par(x = doc, value = paste0(str_table_tag, rownumber, if(create_table2) "a", caption_suffix, if(show_p_table=="caption") " (%)"), style = ) %>%
+								officer::body_add_table(x = .,value = df_display1, style = table_body, header = TRUE, alignment = c("l", rep("r", ncol(table1)-1)),
+														stylenames = officer::table_stylenames(stylenames = rlang::set_names(x=rep(table_body, ncol(table1)), nm=colnames(table1)))) %>%
+								officer::body_add_par(x = ., value = "", style = paragraph)
+						}
+						if(pptx) {
+							
+							ppt <<-
+								officer::add_slide(ppt, layout = pptx_layout, master = pptx_master) %>%
+								officer::ph_with(x = ., value = df_display1,
+												 location = officer::ph_location_type(), alignment = c("l", rep("c", ncol(table1)-1))) %>%
+								officer::ph_with(x = ., value = paste0(str_table_tag, rownumber, if(create_table2) "a", caption_suffix, if(show_p_table=="caption") " (%)"),
+												 location = officer::ph_location_type(type = "ftr"))
+						}
+						
+					}
+				}
+				
+				if(!is.na(x_var) & create_barplot2) {
+					
+					tab_long2 <-
+						tab %>%
+						dplyr::mutate(dplyr::across(.cols = -dplyr::all_of(x_var), .fns = ~as.integer(haven::as_factor(.)))) %>%
+						dplyr::mutate(dplyr::across(.cols = dplyr::all_of(x_var), .fns = ~labelled::to_character(.))) %>%
+						dplyr::group_by(category=.data[[x_var]]) %>%
+						dplyr::summarize(dplyr::across(.cols = dplyr::all_of(y_label), .fns = ~round(mean(., na.rm=TRUE), digits = round_digits+1)), n_per_var=dplyr::n()) %>%
+						dplyr::ungroup() %>%
+						tidyr::pivot_longer(cols = dplyr::all_of(y_label), names_to = "var", values_to = "val")  %>%
+						{if(drop_na_y) dplyr::filter(., !is.na(.data$category)) else dplyr::mutate(., category = dplyr::if_else(is.na(.data$category), "<NA>", .data$category))} %>%
+						{if(drop_na_y) dplyr::filter(., !is.na(.data$val)) else .} %>%
+						{if(drop_na_x) dplyr::filter(., !is.na(.data$var)) else dplyr::mutate(., var = dplyr::if_else(is.na(.data$var), "<NA>", .data$var))} %>%
+						{if(show_n_chart=="axis" | (show_n_chart=="auto" & dplyr::n_distinct(.[["n_per_var"]])>1L)) {
+							tidyr::unite(., col = "var", all_of(c("var", "n_per_var")), sep = " (N=", remove = TRUE, na.rm = TRUE) %>%
+								dplyr::mutate(var = paste0(.data$var, ")"))} else .} %>%
+						dplyr::arrange(.data$var, .data$category)
+					
+					caption_suffix <- paste0(". ", title,
+											 if(show_n_chart=="caption" |
+											    (show_n_chart == "auto" & dplyr::n_distinct(range(tab_long2$n_per_var))==1L)) {
+											 	paste0(" N=[", paste0(unique(range(tab_long2$n_per_var)), collapse="-"), "]")
+											 })
+					
+					
+					barplot2 <- ms_percentbar(df = tab_long2, y_var = "val", x_var="var",
+											  user_colours=x_colour_set, f_size = font_size, means=TRUE)
+					
+					if(docx) {
+						n_vars2 <- dplyr::n_distinct(barplot2[["data"]][["var"]])
+						doc <<-
+							mschart::body_add_chart(x = doc, width = img_width, height = min(img_height_max, n_vars2*7/25+150/100), chart = barplot2, style = figure) %>%
+							officer::body_add_par(x = ., value = paste0(str_figure_tag, rownumber, if(create_barplot1) "b", caption_suffix), style = )
+					}
+					
+					if(pptx) {
+						ppt <<-
+							officer::add_slide(ppt, layout = , master = pptx_master) %>%
+							officer::ph_with(x = ., value = barplot2, location = officer::ph_location_fullsize()) %>%
+							officer::ph_with(x = ., value = paste0(str_figure_tag, rownumber, if(create_barplot1) "b", caption_suffix),
+											 location = officer::ph_location_type(type = "ftr"))
+					}
+				}
+				
+				### Three-level table for layered chart (manually constructed)
+				if(!is.na(x_var) & length(y_var)>1L & create_table2) {
+					table2 <-
+						tab %>%
+						tidyr::pivot_longer(cols = dplyr::all_of(.env$y_label), names_to = "var", values_to = "val") %>%
+						dplyr::mutate(var = labelled::to_character(.data$var),
+									  category = labelled::to_character(.data$val),
+									  val = as.integer(haven::as_factor(.data$val))) %>% # Problem here if first variable lacks a category
+						{if(.env$drop_na_y) dplyr::filter(., !is.na(.data$category)) else dplyr::mutate(., category = dplyr::if_else(is.na(.data$category), "<NA>", .data$category))} %>%
+						{if(.env$drop_na_y) dplyr::filter(., !is.na(.data$val)) else .} %>%
+						{if(.env$drop_na_x & !is.na(.env$x_var)) dplyr::filter(., !is.na(.data$var)) else dplyr::mutate(., var = dplyr::if_else(is.na(.data$var), "<NA>", .data$var))} %>%
+						dplyr::add_count(.data$var, .data[[x_var]], name = "n_per_var_var2") %>%
+						dplyr::count(.data$var, .data[[x_var]], .data$n_per_var_var2, .data$val, .data$category, name = "n_per_var_val_var2") %>%
+						dplyr::mutate(percent = round(.data$n_per_var_val_var2/.data$n_per_var_var2*100, round_digits)) %>%
+						{if(.env$show_n_chart=="axis" | (.env$show_n_chart=="auto" & dplyr::n_distinct(.[["n_per_var_var2"]]) > 1L)) {
+							tidyr::unite(., col = "var", c(.data$var, .data$n_per_var), sep = " (N=", remove = TRUE, na.rm = TRUE) %>%
+								dplyr::mutate(var=paste0(.data$var, ")"))} else .} %>%
+						{if(.env$prefix_number) tidyr::unite(., col = "category", c(.data$val, .data$category), sep = ": ", remove = FALSE) else .} %>%
+						dplyr::arrange(.data$val) %>%
+						dplyr::mutate(category = factor(.data$category, levels = unique(.data$category), ordered = T)) %>% # Problem here if first variable lacks a category
+						{if(.env$show_p_table == "axis") dplyr::mutate(., category = paste0(.data$category, " (%)")) else .} %>%
+						{if(.env$show_n_table == "axis") dplyr::rename(., N = .data$n_per_var_var2) else dplyr::select(., -dplyr::all_of("n_per_var_var2"))} %>%
+						dplyr::arrange(dplyr::all_of(x_var), .data$var, .data$val) %>%
+						dplyr::select(-dplyr::all_of(c("n_per_var_val_var2", "val")))  %>%
+						tidyr::pivot_wider(names_from = .data$category, values_from = .data$percent) %>%
+						dplyr::relocate(dplyr::all_of(c(x_var, "var"))) %>%
+						dplyr::rename_with(.cols = dplyr::all_of("var"), .fn = ~ y_group_label)
+					
+					if(docx) {
+						## Can this line be generalized?
+						df_display2 <- 
+							table2 %>%
+							dplyr::mutate(dplyr::across(dplyr::all_of(colnames(.)[purrr::map_lgl(.x = ., .f = ~all(is.na(.x)))]), 
+														~gsub("\\.", ",", round(replace(., is.na(.), str_blank), 
+																				digits = round_digits))))
+						
+						doc <<-
+							officer::body_add_par(x = doc, value = paste0(str_table_tag, rownumber, if(create_table2) "b", ". ", title, if(show_p_table=="caption") " (%)"), style = table_caption) %>%
+							officer::body_add_table(x = .,value = df_display2, style = table_body, header = TRUE, alignment = c("l", rep("r", ncol(table2)-1)),
+													stylenames = officer::table_stylenames(stylenames = rlang::set_names(rep(table_body, ncol(table2)), colnames(table2)))) %>%
+							officer::body_add_par(x = ., value = "", style = paragraph)
+					}
+					
+					if(xlsx) {
+						xls <<-
+							officer::add_sheet(x = xls, label = paste0(rownumber, paste0(y_var, collapse="_"), if(!is.na(x_var)) x_var, sep="x"))
+					}
+					
+					# colour_palette3 <-
+					# 	get_colour_set(n_colours_needed = n_distinct(tab_long3$category),
+					# 					 user_colour_set = if(battery %in% nominal_vars) y_colour_set_nominal else y_colour_set) %>%
+					# 	rlang::set_names(nm=unique(tab_long3$category)) %>%
+					# 	.[1:dplyr::n_distinct(tab_long3$category)]
+					#
+					# fp_text_settings3 <-
+					# 	lapply(colour_palette3, function(color) {
+					# 		officer::fp_text(font.size=font_size, color=hex_bw(color))}) %>%
+					# 	.[1:dplyr::n_distinct(tab_long3$category)]
+					
+					# chart3 <-
+					# 	mschart::ms_barchart(data = tab_long2, y = "val", x="var", group = "category") %>%
+					# 	mschart::chart_data_labels(x=., position = "ctr", show_val = T) %>%
+					# 	mschart::chart_settings(x = .,   dir="horizontal") %>%
+					# 	mschart::chart_labels(x = ., title = "", xlab = "", ylab = "") %>%
+					# 	mschart::chart_labels_text(x = ., values=fp_text_settings2) %>%
+					# 	mschart::chart_theme(x = ., legend_position = "b",
+					# 						 axis_text_x = officer::fp_text(font.size = font_size),
+					# 						 axis_ticks_y = officer::fp_border(style = "none"),
+					# 						 axis_ticks_x = officer::fp_border(style = "none"),
+					# 						 grid_major_line_x = officer::fp_border(style = "none"),
+					# 						 grid_major_line_y = officer::fp_border(style = "none"),
+					# 						 grid_minor_line_x = officer::fp_border(style = "none"),
+					# 						 grid_minor_line_y = officer::fp_border(style = "none"),
+					# 						 legend_text = officer::fp_text(font.size = font_size)) %>%
+					# 	mschart::chart_data_fill(x=., values=colour_palette2) %>%
+					# 	mschart::chart_data_stroke(x=., values=colour_palette2) %>%
+					# 	mschart::chart_ax_y(x = ., limit_min = 0) %>%
+					# 	mschart::chart_ax_x(x = ., minor_tick_mark = "none")
+				}
+				mget(x = ls())
+			}
+		
+		design_frame <-
+			design_frame %>%
+			dplyr::arrange(.data[["section1"]], .data[["section2"]], .data[["sort_order"]]) %>%
+			dplyr::mutate(rownumber = 1:nrow(.))
+		
+		progress_installed <- requireNamespace("progress", quietly = TRUE)
+		if(progress_installed) pb <- progress::progress_bar$new(format = "[:bar] :current/:total (:percent)", total = nrow(design_frame))
+		if(progress_installed) pb$tick(0)
+		
+		
+		
+		
 		doc <<-
-			officer::body_add_par(x = doc, value = if(!is.na(sec1)) sec1 else "", style = "NIFU_Overskrift 2 nummerert") %>%
-			officer::body_add_par(x = ., value = "", style = "NIFU_Normal første")
-		}
-
-		purrr::map(unique(design_frame[design_frame[["section1"]] == sec1, "section2"]), .f = function(sec2) {
-			if(!is.na(sec2)) {
+			officer::body_add_par(x = doc, value = "Results", style = heading_1) %>%
+			officer::body_add_par(x = ., value = "", style = )
+		
+		out <- purrr::map(unique(design_frame[["section1"]]), .f = function(sec1) {
+			if(!is.na(sec1)) {
 				doc <<-
-					officer::body_add_par(x = doc, value = if(!is.na(sec2)) sec2 else "", style = "NIFU_Overskrift 3 nummerert") %>%
-					officer::body_add_par(x = ., value = "", style = "NIFU_Normal første")
+					officer::body_add_par(x = doc, value = if(!is.na(sec1)) sec1 else "", style = heading_2) %>%
+					officer::body_add_par(x = ., value = "", style = paragraph)
 			}
-			input <-
-				design_frame %>%
-				{if(!is.na(sec1)) dplyr::filter(., section1 == sec1) else dplyr::filter(., is.na(section1))} %>%
-				{if(!is.na(sec2)) dplyr::filter(., section2 == sec2) else dplyr::filter(., is.na(section2))}
-
-			purrr::pmap(.l = input, .f = create_report_entry)
+			
+			purrr::map(unique(design_frame[design_frame[["section1"]] == sec1, "section2"]), .f = function(sec2) {
+				if(!is.na(sec2)) {
+					doc <<-
+						officer::body_add_par(x = doc, value = if(!is.na(sec2)) sec2 else "", style = heading_3) %>%
+						officer::body_add_par(x = ., value = "", style = paragraph)
+				}
+				input <-
+					design_frame %>%
+					{if(!is.na(sec1)) dplyr::filter(., .data$section1 == sec1) else dplyr::filter(., is.na(.data$section1))} %>%
+					{if(!is.na(sec2)) dplyr::filter(., .data$section2 == sec2) else dplyr::filter(., is.na(.data$section2))}
+				
+				purrr::pmap(.l = input, .f = function(...) {
+					if(progress_installed & exists("pb")) pb$tick()
+					create_report_entry(...)
+				})
+			})
 		})
-	})
-	if(pptx) print(x = ppt, target = file.path(path, paste0(file_prefix, ".pptx")))
-	if(xlsx) print(x = xls, target = file.path(path, paste0(file_prefix, ".xlsx")))
-	if(docx) print2.rdocx(x=doc, target = file.path(path, paste0(file_prefix, ".docx")))
-	list(df=df, var_frame=var_frame, design_frame=design_frame, report=out)
-}
-
-areColors <- function(x) {
-	sapply(x, function(X) { # Avoid sapply
-		tryCatch(is.matrix(col2rgb(X)),
-				 error = function(e) FALSE)
-	})
-}
-
-hex_bw <- function(hex_code) {
-
-	myrgb <- as.integer(col2rgb(hex_code))
-
-	rgb_conv <- lapply(myrgb, function(x) {
-		i <- x / 255
-		if (i <= 0.03928) i / 12.92 else ((i + 0.055) / 1.055) ^ 2.4
-	})
-	rgb_calc <- (0.2126*rgb_conv[[1]]) + (0.7152*rgb_conv[[2]]) + (0.0722*rgb_conv[[3]])
-
-	if (rgb_calc > 0.179) return("#000000") else return("#ffffff")
-
-}
-
-get_colour_set <- function(n_colours_needed, user_colour_set) {
-
-
-	x <- 1:length(user_colour_set)
-
-	if(!is.null(user_colour_set) &&
-	   length(user_colour_set) >= n_colours_needed &&
-	   all(areColors(user_colour_set))) {
-		if(length(user_colour_set)==7L) {
-
-			if(n_colours_needed==7L) return(user_colour_set)
-			if(n_colours_needed==6L) return(user_colour_set[c(1:3, 5:length(x))])
-			if(n_colours_needed==5L) return(user_colour_set[c(1:2, median(x), 6:length(x))])
-			if(n_colours_needed==4L) return(user_colour_set[c(1,3, 5,length(x))])
-			if(n_colours_needed==3L) return(user_colour_set[c(1, median(x),length(x))])
-			if(n_colours_needed==2L) return(user_colour_set[c(1, length(x))])
-		} else return(user_colour_set)
-
-	} else {
-		if(length(built_in_colour_set) >= n_colours_needed) {
-			return(built_in_colour_set)
-		} else {
-			library(RColorBrewer)
-			set.seed(1)
-			qual_col_pals <- RColorBrewer::brewer.pal.info[brewer.pal.info$category == 'qual' & brewer.pal.info$colorblind,]
-			mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)) %>%
-				unlist() %>%
-				sample(., n_colours_needed)
-		}
-	}
-
-}
-
-ms_percentbar <- function(df, y_string, x_string, group_string="category", user_colours="#000000", f_size=8, means=FALSE) {
-	if(!is.data.frame(df)) rlang::abort("df is not a data.frame")
-	if(!(is.character(y_string) & length(y_string)==1L & !is.na(y_string) & y_string %in% colnames(df))) rlang::abort("y_string must be a single, non-NA, string and a valid column name in df.")
-	if(!(is.character(x_string) & length(x_string)==1L & !is.na(x_string) & x_string %in% colnames(df))) rlang::abort("x_string must be a non-NA string and a valid column name in df.")
-	if(!(is.character(group_string) & length(group_string)==1L & !is.na(group_string) & x_string %in% colnames(df))) rlang::abort("group_string must be a single non-NA string and a valid column name in df.")
-	if(!means %in% c(T, F)) rlang::abort("means must be either TRUE or FALSE.")
-	if(!all(areColours(user_colours))) rlang::abort("colours must be a character vector of valid colours in hex-format (e.g. #000000).")
-
-	colour_palette <-
-		get_colour_set(n_colours_needed = dplyr::n_distinct(df[["category"]]),
-					   user_colour_set = user_colours) %>%
-		setNames(nm=unique(df[["category"]])) %>% # Could this be part of the function?
-		.[1:dplyr::n_distinct(df[["category"]])] # Could this be part of the function?
-	fp_text_settings <-
-		lapply(colour_palette, function(color) {
-			officer::fp_text(font.size=f_size, color=hex_bw(color))}) %>%
-		.[1:dplyr::n_distinct(df[["category"]])]
-
-	fp_b <- officer::fp_border(style = "none")
-	fp_t <- officer::fp_text(font.size = f_size)
-	mschart::ms_barchart(data = df, y = y_string, x=x_string, group = group_string) %>%
-		mschart::chart_data_labels(x=., position = "ctr", show_val = T, num_fmt = if(!means) "0%" else NA) %>% # Control rounding as argument
-		mschart::chart_settings(x = ., grouping = if(!means) "stacked" else "standard",
-								overlap = if(!means) 100 else 0, gap_width= if(!means) 50 else 100, dir="horizontal") %>%
-		mschart::chart_labels(x = ., title = "", xlab = "", ylab = "") %>% # Add title here by default?
-		mschart::chart_labels_text(x = ., values=fp_text_settings) %>%
-		mschart::chart_theme(x = .,
-							 axis_title_x = officer::fp_text(font.size = 1),
-							 axis_title_y = officer::fp_text(font.size = 1),
-							 main_title = officer::fp_text(font.size = 1), # Can be dropped
-							 legend_position = "b",
-							 axis_text_x = fp_t,
-							 axis_ticks_y = fp_b,
-							 axis_ticks_x = fp_b,
-							 grid_major_line_x = fp_b,
-							 grid_major_line_y = fp_b,
-							 grid_minor_line_x = fp_b,
-							 grid_minor_line_y = fp_b,
-							 legend_text = fp_t) %>%
-		mschart::chart_data_fill(x=., values=colour_palette) %>%
-		mschart::chart_data_stroke(x=., values=colour_palette) %>%
-		mschart::chart_ax_y(x = ., limit_min = 0, limit_max = if(!means) 1 else ceiling(max(df[[y_string]])), num_fmt = if(!means) "0%%" else NA)  %>%
-		mschart::chart_ax_x(x = ., major_tick_mark = "none", minor_tick_mark = "none")
-}
-
-
-create_report_entry <- function(rownumber,
-								y_var, y_label, y_group, y_group_label, y_colour_set, drop_na_y,
-								x_var, x_label, x_group, x_group_label, x_colour_set, drop_na_x,
-								est, pval, section1, section2, sort_order,
-								prefix_number, hide_label_if_less_than, font_size, round_digits, show_n_chart,
-								create_barplot1, create_barplot2, create_table1, create_table2,	pptx, docx, xlsx, ...) {
-
-
-	arg_call <- as.list(match.call(expand.dots = T))
-	pb$tick()
-
-	# Early abort, warnings and messages. These could be moved even further up front?
-	y_var_unavail <- y_var[!y_var %in% colnames(df)]
-	if(length(y_var_unavail)>0L) {
-		View(arg_call)
-		rlang::abort(message = paste0("Following y_var not found in df", paste0(y_var_unavail, collapse=",")))
-	}
-
-	problem_singular <- dplyr::select(df, dplyr::all_of(y_var)) %>% dplyr::select(tidyselect:::where(~all(is.na(.)))) %>% colnames()
-	if(length(problem_singular)>0L) {
-		rlang::warn(paste0("There is only NA in ", paste0(problem_singular, collapse=","), ". Will skip it."))
-		return()
+		if(pptx) print(x = ppt, target = file.path(path, paste0(file_prefix, ".pptx")))
+		if(xlsx) print(x = xls, target = file.path(path, paste0(file_prefix, ".xlsx")))
+		if(docx) print2.rdocx(x=doc, target = file.path(path, paste0(file_prefix, ".docx")))
+		
+		list(df=obj$df, var_frame=obj$var_frame, design_frame=obj$design_frame, report=out)
 	}
 
 
 
-	if(is.null(x_var)) x_var <- NA_character_
-	if(!is.na(x_var)) {
-
-		if((!is.character(x_var) | !length(x_var) %in% 0:1)) {
-			View(arg_call)
-			rlang::abort(message = paste0("Current version only accepts x_var as a single string per row. Problem with: ", paste0(x_var, collapse=",")))
-		}
-		if(any(!x_var %in% colnames(df))) {
-			View(arg_call)
-			rlang::abort(message = paste0("Following x_var not found in df:", x_var))
-		}
-
-	}
-
-	if(is.na(y_colour_set) || !all(areColors(y_colour_set))) {
-		rlang::warn("No valid colours provided. Using default.\n")
-	}
-
-
-
-	# Create title
-	if(length(y_var) == 1L & length(y_label) == 1L) y_group_label <- paste0(y_group_label, " - ", y_label)
-	title <- dplyr::case_when(is.na(x_var) || is.na(est) || is.na(pval) ~ y_group_label,
-					   est > 0 & pval<.05 ~ paste0(y_group_label, str_pos, paste0(x_label, collapse="_")),
-					   est < 0 & pval<.05 ~ paste0(y_group_label, str_neg, paste0(x_label, collapse="_")),
-					   pval>=.05 | est == 0 ~ paste0(y_group_label, str_not, paste0(x_label, collapse="_")))
-
-	tab <-
-		df %>%
-		dplyr::select(all_of(c(unname(y_var), if(!is.na(x_var)) x_var))) %>%
-		labelled::set_variable_labels(.labels = setNames(y_label, nm=unname(y_var)) %>% as.list()) %>%
-		setNames(nm = ifelse(nchar(var_label(., unlist = T))==0L | colnames(.) %in% x_var,
-							 colnames(.), var_label(., unlist = T)))
-
-	if(!is.na(x_var) && length(y_var)>1) {
-		rlang::warn("When x_var is specified, barcharts are currently limited to single-item batteries. Omitting barchart1")
-	} else {
-
-
-		tab_long1 <-
-			tab %>%
-			{if(is.na(x_var)) tidyr::pivot_longer(., cols = dplyr::all_of(y_label), names_to = "var", values_to = "val") else {
-				dplyr::rename(., val={y_label}, var={x_var})}} %>%
-			dplyr::mutate(var = labelled::to_character(var),
-						  category = labelled::to_character(val),
-						  val = as.integer(haven::as_factor(val))) %>% # Problem here if first variable lacks a category
-			{if(drop_na_y) dplyr::filter(., !is.na(category)) else dplyr::mutate(., category = dplyr::if_else(is.na(category), "<NA>", category))} %>%
-			{if(drop_na_y) dplyr::filter(., !is.na(val)) else .} %>%
-			{if(drop_na_x & !is.na(x_var)) dplyr::filter(., !is.na(var)) else dplyr::mutate(., var = dplyr::if_else(is.na(var), "<NA>", var))} %>%
-			dplyr::add_count(var, name = "n_per_var") %>%
-			dplyr::count(var, n_per_var, val, category, name = "n_per_var_val") %>%
-			dplyr::mutate(percent = round(n_per_var_val/n_per_var, 3)) %>%
-			{if(show_n_chart=="axis" |
-				(show_n_chart=="auto" &
-				 dplyr::n_distinct(.[["n_per_var"]]) > 1L)) tidyr::unite(., col = "var", c(var, n_per_var), sep = " (N=", remove = T, na.rm = T) %>%
-					dplyr::mutate(var=paste0(var, ")")) else .} %>%
-			{if(prefix_number) tidyr::unite(., col = "category", c(val, category), sep = ": ", remove = F) else .} %>%
-			dplyr::arrange(val) %>%
-			dplyr::mutate(category = forcats::fct_inorder(category, ordered = T)) %>% # Problem here if first variable lacks a category
-			dplyr::arrange(var, val)
-
-
-		### THIS WILL FAIL IF NO tab_long1 HAS BEEN CREATED BUT NEEDED LATER!
-		caption_suffix <- paste0(". ", title,
-								 if(show_n_chart=="caption" |
-								    (show_n_chart == "auto" & dplyr::n_distinct(range(tab_long1$n_per_var))==1L)) {
-								 	paste0(" N=[", paste0(unique(range(tab_long1$n_per_var)), collapse="-"), "]")
-								 })
-
-		# {if(sort=="alphabetical") dplyr::arrange(., if(desc) desc(var) else var, val) else .} %>%
-		# {if(sort=="sum_upper_categories") dplyr::group_by(., var) %>%
-		# 		dplyr::mutate(sort_var = ifelse(category = )) %>%
-		# 		dplyr::arrange(if(desc) desc(sort_var) else sort_var, val) else .} %>%
-		# {if(sort=="alphabetical") dplyr::arrange(., if(desc) desc(var) else var, val) else .} %>%
-		# {if(sort=="alphabetical") dplyr::arrange(., if(desc) desc(var) else var, val) else .} %>%
-		#"average", "sum_upper_categories", "alphabetical", "sum_lower_categories", "significance",
-
-		if(create_barplot1) {
-
-
-			barplot1 <- ms_percentbar(df = tab_long1, y_string = "percent", x_string="var",
-									  means = FALSE, f_size = font_size, user_colours=y_colour_set)
-
-			if(docx) {
-				n_vars1 <- length(unique(barplot1[["data"]][["var"]]))
-				doc <<-
-					mschart::body_add_chart(x = doc, width = img_width, height = min(img_height_max, n_vars1*7/25+150/100), style = "NIFU_Figuranker_bred",
-											chart = mschart::chart_labels_text(x = barplot1, values=officer::fp_text(font.size=5))) %>%
-					officer::body_add_par(x = ., value = paste0(str_figure_tag, rownumber, if(create_barplot2) "a", caption_suffix), style = "NIFU_Figur tittel") %>%
-					officer::body_add_par(x = ., value = "", style = "NIFU_Normal første")
-			}
-
-			if(pptx) {
-				ppt <<-
-					officer::add_slide(ppt, layout = "Tittel og innhold", master = "NIFU_ppt_NO") %>%
-					officer::ph_with(x = ., value = barplot1, location = officer::ph_location_fullsize()) %>%
-					officer::ph_with(x = ., value = paste0(str_figure_tag, rownumber, if(create_barplot2) "a", caption_suffix),
-									 location = officer::ph_location_type(type = "ftr"))
-			}
-		}
-
-
-		if(create_table1) {
-			table1 <-
-				tab_long1 %>%
-				dplyr::select(-val, -n_per_var_val) %>%
-				dplyr::mutate(percent = percent*100) %>%
-				{if(show_n_table != "axis") select(., -n_per_var) else dplyr::rename(., N=n_per_var)} %>%
-				dplyr::rename_with(.cols = var, .fn = ~ y_group_label) %>%
-				tidyr::pivot_wider(names_from = category, values_from = percent) %>%
-				{if(show_p_table == "axis") dplyr::rename_with(., .cols = -1, ~ paste0(., " (%)")) else .}
-
-			if(xlsx) {
-				table1 <<-
-					officer::add_sheet(x = table1, label = paste0(y_var, if(!is.na(x_var)) x_var, collapse="_"))
-			}
-
-			df_display1 <-
-				table1 %>%
-				dplyr::mutate(dplyr::across(tidyselect:::where("is.numeric"),
-											~gsub("\\.", ",", round(replace(., is.na(.), str_blank), digits = round_digits))))
-
-			if(docx) {
-
-				doc <<-
-					officer::body_add_par(x = doc, value = paste0(str_table_tag, rownumber, if(create_table2) "a", caption_suffix, if(show_p_table=="caption") " (%)"), style = "NIFU_Tabell tittel") %>%
-					officer::body_add_table(x = .,value = df_display1, style = "NIFU_Tabell 1", header = T, alignment = c("l", rep("r", ncol(table1)-1)),
-											stylenames = officer::table_stylenames(stylenames = setNames(rep("NIFU_Tabell kropp", ncol(table1)), colnames(table1)))) %>%
-					officer::body_add_par(x = ., value = "", style = "NIFU_Normal første")
-			}
-			if(pptx) {
-
-				ppt <<-
-					officer::add_slide(ppt, layout = "Tittel og innhold", master = "NIFU_ppt_NO") %>%
-					officer::ph_with(x = ., value = df_display1,
-									 location = officer::ph_location_type(), alignment = c("l", rep("c", ncol(table1)-1))) %>%
-					officer::ph_with(x = ., value = paste0(str_table_tag, rownumber, if(create_table2) "a", caption_suffix, if(show_p_table=="caption") " (%)"),
-									 location = officer::ph_location_type(type = "ftr"))
-			}
-
-		}
-	}
-
-	if(!is.na(x_var) & create_barplot2) {
-
-		tab_long2 <-
-			tab %>%
-			dplyr::mutate(dplyr::across(.cols = -dplyr::all_of(x_var), .fns = ~as.integer(haven::as_factor(.)))) %>%
-			dplyr::mutate(dplyr::across(.cols = dplyr::all_of(x_var), .fns = ~labelled::to_character(.))) %>%
-			dplyr::group_by(category=.data[[x_var]]) %>%
-			dplyr::summarize(across(.cols = dplyr::all_of(y_label), .fns = ~round(mean(., na.rm=T), digits = round_digits+1)), n_per_var=dplyr::n()) %>%
-			dplyr::ungroup() %>%
-			tidyr::pivot_longer(cols = dplyr::all_of(y_label), names_to = "var", values_to = "val")  %>%
-			{if(drop_na_y) dplyr::filter(., !is.na(category)) else dplyr::mutate(., category = dplyr::if_else(is.na(category), "<NA>", category))} %>%
-			{if(drop_na_y) dplyr::filter(., !is.na(val)) else .} %>%
-			{if(drop_na_x) dplyr::filter(., !is.na(var)) else dplyr::mutate(., var = dplyr::if_else(is.na(var), "<NA>", var))} %>%
-			{if(show_n_chart=="axis" | (show_n_chart=="auto" & dplyr::n_distinct(.[["n_per_var"]])>1L)) tidyr::unite(., col = "var", c(var, n_per_var), sep = " (N=", remove = T, na.rm = T) %>%
-					dplyr::mutate(var=paste0(var, ")")) else .} %>%
-			dplyr::arrange(var, category)
-
-		caption_suffix <- paste0(". ", title,
-								 if(show_n_chart=="caption" |
-								    (show_n_chart == "auto" & dplyr::n_distinct(range(tab_long2$n_per_var))==1L)) {
-								 	paste0(" N=[", paste0(unique(range(tab_long2$n_per_var)), collapse="-"), "]")
-								 })
-
-
-		barplot2 <- ms_percentbar(df = tab_long2, y_string = "val", x_string="var",
-								  user_colours=x_colour_set, f_size = font_size, means=TRUE)
-
-		if(docx) {
-			n_vars2 <- dplyr::n_distinct(barplot2[["data"]][["var"]])
-			doc <<-
-				mschart::body_add_chart(x = doc, width = img_width, height = min(img_height_max, n_vars2*7/25+150/100), chart = barplot2, style = "NIFU_Figuranker_bred") %>%
-				officer::body_add_par(x = ., value = paste0(str_figure_tag, rownumber, if(create_barplot1) "b", caption_suffix), style = "NIFU_Figur tittel")
-		}
-
-		if(pptx) {
-			ppt <<-
-				officer::add_slide(ppt, layout = "Tittel og innhold", master = "NIFU_ppt_NO") %>%
-				officer::ph_with(x = ., value = barplot2, location = officer::ph_location_fullsize()) %>%
-				officer::ph_with(x = ., value = paste0(str_figure_tag, rownumber, if(create_barplot1) "b", caption_suffix),
-								 location = officer::ph_location_type(type = "ftr"))
-		}
-	}
-
-	### Three-level table for layered chart (manually constructed)
-	if(!is.na(x_var) & length(y_var)>1L & create_table2) {
-		table2 <-
-			tab %>%
-			tidyr::pivot_longer(cols = dplyr::all_of(y_label), names_to = "var", values_to = "val") %>%
-			dplyr::mutate(var = labelled::to_character(var),
-						  category = labelled::to_character(val),
-						  val = as.integer(haven::as_factor(val))) %>% # Problem here if first variable lacks a category
-			{if(drop_na_y) dplyr::filter(., !is.na(category)) else dplyr::mutate(., category = dplyr::if_else(is.na(category), "<NA>", category))} %>%
-			{if(drop_na_y) dplyr::filter(., !is.na(val)) else .} %>%
-			{if(drop_na_x & !is.na(x_var)) dplyr::filter(., !is.na(var)) else dplyr::mutate(., var = dplyr::if_else(is.na(var), "<NA>", var))} %>%
-			dplyr::add_count(var, .data[[x_var]], name = "n_per_var_var2") %>%
-			dplyr::count(var, .data[[x_var]], n_per_var_var2, val, category, name = "n_per_var_val_var2") %>%
-			dplyr::mutate(percent = round(n_per_var_val_var2/n_per_var_var2*100, round_digits)) %>%
-			{if(show_n_chart=="axis" | (show_n_chart=="auto" & dplyr::n_distinct(.[["n_per_var_var2"]])>1L)) {
-				tidyr::unite(., col = "var", c(var, n_per_var), sep = " (N=", remove = T, na.rm = T) %>%
-					dplyr::mutate(var=paste0(var, ")"))} else .} %>%
-			{if(prefix_number) tidyr::unite(., col = "category", c(val, category), sep = ": ", remove = F) else .} %>%
-			dplyr::arrange(val) %>%
-			dplyr::mutate(category = forcats::fct_inorder(category, ordered = T)) %>% # Problem here if first variable lacks a category
-			{if(show_p_table == "axis") dplyr::mutate(., category = paste0(category, " (%)")) else .} %>%
-			{if(show_n_table == "axis") dplyr::rename(., N=n_per_var_var2) else dplyr::select(., -n_per_var_var2)} %>%
-			dplyr::arrange(dplyr::all_of(x_var), var, val) %>%
-			dplyr::select(-n_per_var_val_var2, -val)  %>%
-			tidyr::pivot_wider(names_from = category, values_from = percent) %>%
-			dplyr::relocate(dplyr::all_of(c(x_var, "var"))) %>%
-			dplyr::rename_with(.cols = var, .fn = ~ y_group_label)
-
-		if(docx) {
-			## Can this line be generalized?
-			df_display2 <- dplyr::mutate(table2, dplyr::across(tidyselect:::where("is.numeric"), ~gsub("\\.", ",", round(replace(., is.na(.), str_blank), digits = round_digits))))
-
-			doc <<-
-				officer::body_add_par(x = doc, value = paste0(str_table_tag, rownumber, if(create_table2) "b", ". ", title, if(show_p_table=="caption") " (%)"), style = "NIFU_Tabell tittel") %>%
-				officer::body_add_table(x = .,value = df_display2, style = "NIFU_Tabell 1", header = T, alignment = c("l", rep("r", ncol(table2)-1)),
-										stylenames = officer::table_stylenames(stylenames = setNames(rep("NIFU_Tabell kropp", ncol(table2)), colnames(table2)))) %>%
-				officer::body_add_par(x = ., value = "", style = "NIFU_Normal første")
-		}
-
-		if(xlsx) {
-			xls <<-
-				officer::add_sheet(x = xls, label = paste0(rownumber, paste0(y_var, collapse="_"), if(!is.na(x_var)) x_var, sep="x"))
-		}
-
-		# colour_palette3 <-
-		# 	get_colour_set(n_colours_needed = n_distinct(tab_long3$category),
-		# 					 user_colour_set = if(battery %in% nominal_vars) y_colour_set_nominal else y_colour_set) %>%
-		# 	setNames(nm=unique(tab_long3$category)) %>%
-		# 	.[1:dplyr::n_distinct(tab_long3$category)]
-		#
-		# fp_text_settings3 <-
-		# 	lapply(colour_palette3, function(color) {
-		# 		officer::fp_text(font.size=font_size, color=hex_bw(color))}) %>%
-		# 	.[1:dplyr::n_distinct(tab_long3$category)]
-
-		# chart3 <-
-		# 	mschart::ms_barchart(data = tab_long2, y = "val", x="var", group = "category") %>%
-		# 	mschart::chart_data_labels(x=., position = "ctr", show_val = T) %>%
-		# 	mschart::chart_settings(x = .,   dir="horizontal") %>%
-		# 	mschart::chart_labels(x = ., title = "", xlab = "", ylab = "") %>%
-		# 	mschart::chart_labels_text(x = ., values=fp_text_settings2) %>%
-		# 	mschart::chart_theme(x = ., legend_position = "b",
-		# 						 axis_text_x = officer::fp_text(font.size = font_size),
-		# 						 axis_ticks_y = officer::fp_border(style = "none"),
-		# 						 axis_ticks_x = officer::fp_border(style = "none"),
-		# 						 grid_major_line_x = officer::fp_border(style = "none"),
-		# 						 grid_major_line_y = officer::fp_border(style = "none"),
-		# 						 grid_minor_line_x = officer::fp_border(style = "none"),
-		# 						 grid_minor_line_y = officer::fp_border(style = "none"),
-		# 						 legend_text = officer::fp_text(font.size = font_size)) %>%
-		# 	mschart::chart_data_fill(x=., values=colour_palette2) %>%
-		# 	mschart::chart_data_stroke(x=., values=colour_palette2) %>%
-		# 	mschart::chart_ax_y(x = ., limit_min = 0) %>%
-		# 	mschart::chart_ax_x(x = ., minor_tick_mark = "none")
-	}
-	mget(x = ls())
-}
-
-
-
-# What is this for?
+#' Not sure what this is for yet
+#' 
+#' Some function for reverse unlabelling?
+#'
+#' @param var Vector 
+#'
+#' @return A factor.
+#' @export
+#'
+#' @examples
 reverse_unlabeling <- function(var) {
 	val <- as.integer(gsub("\\[([0-9]*)\\].*", "\\1", var))
-	label <- stringr::str_trim(gsub("\\[[0-9]*\\] (.*)", "\\1", var))
+	label <- gsub("\\[[0-9]*\\] (.*)", "\\1", var)
+	label <- gsub("^[[:space:]]*|[[:space:]]*$", "", label)
 	print(unique(val))
 	print(unique(label))
-
-	factor(val, levels = unique(val)[!is.na(unique(val))], labels=unique(label)[!is.na(unique(label))])
+	
+	factor(val, levels = unique(val)[!is.na(unique(val))], 
+		   labels=unique(label)[!is.na(unique(label))])
 }
 
+#' Prints rdocx and fixes issues with mschart
+#' 
+#' mschart package has a small bug which this function rectifies.
+#'
+#' @param x rdocx object
+#' @param target target file path
+#'
+#' @return target file path
+#' @export
+#' @import officer
+#' @importFrom utils unzip zip 
+#' @importFrom readr read_file write_file
+#' @importFrom purrr map_chr
+#' @examples
 print2.rdocx <- function(x, target=file.path(getwd(), "tmp.docx")) {
 	# Unzip everything in temp, recode chart files to UTF-8 and return
 	current_wd <- getwd()
 	dir.create(tmp_zip_dir <- tempfile())
 	tmp_zip <- tempfile(fileext = ".docx")
-	print(doc, target = tmp_zip)
-
+	print(x, target = tmp_zip)
+	
 	utils::unzip(zipfile = tmp_zip, exdir = tmp_zip_dir) %>%
-		grep(pattern = "charts\\/.*\\.xml$", x = ., value = T) %>%
+		grep(pattern = "charts\\/.*\\.xml$", x = ., value = TRUE) %>%
 		purrr::map_chr(., function(xml_file) {
 			xml_content <-
 				readr::read_file(xml_file) %>%
 				iconv(x = ., from = "latin1", to = "UTF-8") %>%
 				gsub('<c:title xmlns:c=\"http://schemas.openxmlformats.org/drawingml/2006/chart\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\" xmlns:r=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships\">\r\n      <c:tx>\r\n        <c:rich>\r\n          <a:bodyPr/>.*<c:autoTitleDeleted val=\"0\"/>',
 					 replacement = '<c:autoTitleDeleted val="1"/>', x = .)
-			readr::write_file(x = xml_content, file = xml_file, append = F)
+			readr::write_file(x = xml_content, file = xml_file, append = FALSE)
 		})
-
+	
 	#### Replace with officer::pack_folder(folder=tmp_zip_dir, target=file.path(path, paste0(file_prefix, ".docx")))
 	setwd(tmp_zip_dir)
-	list.files(path = tmp_zip_dir, all.files = T, recursive = T, include.dirs = F) %>%
+	list.files(path = tmp_zip_dir, all.files = TRUE, recursive = TRUE, include.dirs = FALSE) %>%
 		utils::zip(files=., zipfile = tmp_zip)
 	setwd(current_wd)
-	file.copy(from = tmp_zip, to = target, overwrite = T, copy.date = T)
+	file.copy(from = tmp_zip, to = target, overwrite = TRUE, copy.date = TRUE)
 	target
 }

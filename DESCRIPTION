@@ -1,34 +1,35 @@
 Package: surveyreport
 Type: Package
 Title: Automatic Reports in Office Format Based on Tidy Specifications
-Version: 0.0.1
+Version: 0.0.0.9000
 Author: Stephan Daus
 Maintainer: Stephan Daus <stephus.daus@gmail.com>
 Description: A set of functions to read and process labelled data from survey services (currently SurveyXact is supported. UiO Nettskjema, SurveyMonkey and Opinio later). Produces highly customizable figures, text, analyses and reports for a batch of possible dpendent-independent relations of possible interest.
 License: file LICENSE
 Encoding: UTF-8
 LazyData: true
-Imports: 
+Depends:
+    R (>= 3.5.0), 
     dplyr,
-    tidyselect,
+    labelled
+Imports: 
     purrr,
     tidyr,
-    vctrs,
-    tibble,
     rlang,
+    vctrs,
     glue,
-    labelled,
     haven,
     readr,
     readxl,
     officer,
     mschart,
-    ggplot,
-    progress,
+    RColorBrewer,
+    MplusAutomation,
     utils,
     stats
 Suggests: 
-    MplusAutomation,
-    lavaan,
+    progress,
+    ggfittext,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
+RoxygenNote: 7.1.1

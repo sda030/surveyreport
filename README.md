@@ -1,23 +1,16 @@
----
-output: github_document
----
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/README-",
-  out.width = "100%"
-)
-```
-
 # surveyreport: Automatic Reports in Office Format Based on Tidy Specifications
+
 <!-- badges: start -->
 <!-- badges: end -->
 
-A set of functions to read and process labelled data from survey services (currently SurveyXact is supported. UiO Nettskjema, SurveyMonkey and Opinio later). Produces highly customizable figures, text, analyses and reports for a batch of possible dpendent-independent relations of possible interest.
+A set of functions to read and process labelled data from survey
+services (currently SurveyXact is supported. UiO Nettskjema,
+SurveyMonkey and Opinio later). Produces highly customizable figures,
+text, analyses and reports for a batch of possible dpendent-independent
+relations of possible interest.
 
 ## Installation
 
@@ -27,12 +20,12 @@ The development version from [GitHub](https://github.com/) with:
 install.packages("devtools")
 devtools::install_github("sda030/surveyreport")
 ```
+
 ## Example
 
 This is a basic example which shows you how to solve a common problem:
 
-```{r example,}
-
+``` r
 #library(surveyreport)
 # df <- create_df_from_surveyxact("inst/example_survey_output.xlsx")
 # Prepare your independent variables as you prefer for the final report text and graphs with interpretable (lower-case) categories. Use labelled::var_labels, etc
@@ -61,8 +54,10 @@ This is a basic example which shows you how to solve a common problem:
 # 
 # modbatch <- create_report(modbatch)
 # modbatch <- create_report_grouped(modbatch)
-
 ```
 
-
-You'll still need to render `README.Rmd` regularly, to keep `README.md` up-to-date. `devtools::build_readme()` is handy for this. You could also use GitHub Actions to re-render `README.Rmd` every time you push. An example workflow can be found here: <https://github.com/r-lib/actions/tree/master/examples>.
+You’ll still need to render `README.Rmd` regularly, to keep `README.md`
+up-to-date. `devtools::build_readme()` is handy for this. You could also
+use GitHub Actions to re-render `README.Rmd` every time you push. An
+example workflow can be found here:
+<https://github.com/r-lib/actions/tree/master/examples>.

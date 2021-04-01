@@ -1,0 +1,13 @@
+citHeader("To cite surveyreport in publications use:")
+
+citEntry(entry = "Unpublished",
+  title        = "Report Survey Data Easily with {surveyreport}",
+  author       = personList(as.person("Stephan Daus")),
+  year         = "2021",
+  address = "Tvetenveien 231, 0675 Oslo",
+  note = "An R-package developed for researchers and pollsters in the social sciences.",
+  url = "https://github.com/sda030/surveyreport",
+
+  textVersion  =
+  paste("Daus, S. (2021). Report Survey Data Easily with surveyreport.")
+)

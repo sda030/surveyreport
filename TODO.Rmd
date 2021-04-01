@@ -1,8 +1,11 @@
 ---
 title: "surveyreport TODO"
 author: "Stephan Daus"
-date: "27 3 2021"
-output: html_document
+output: 
+  html_document: 
+    toc: yes
+    number_sections: yes
+    df_print: tibble
 ---
 
 ```{r setup, include=FALSE}
@@ -10,32 +13,63 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Overall design
-* Each of the add_* functions should call an underlying hidden function that generates the specified output for a single case, and the add_* function will loop across all rows in the design frame with purrr::pmap() and attach the output using a standard helper function. Then an autoreport-function could do looping itself by only calling underlying functions
-* class-based objects, or just lists for now? 
 
-# create_df_from_surveyxact
-* Remove plyr::dlply
+-   Each of the add\_\* functions should call an underlying hidden function that generates the specified output for a single case, and the add\_\* function will loop across all rows in the design frame with purrr::pmap() and attach the output using a standard helper function. Then an autoreport-function could do looping itself by only calling underlying functions
+-   class-based objects, or just lists for now? input/output as list of df, var_frame and design_frame. Single input, single output.
+-   Avoid :: by @importFrom pkg fun to save evaluation time
+-   Move "NIFU_Normal første" and other globals to arguments
+-   vctr::vec_assert
+-   missing() instead of is.na() for arguments?
+-   Enumerate options in argument: <https://principles.tidyverse.org/def-enum.html>
+-   rlang::`%||%` whenever possible
+-   rlang::`%|%` for when replacing NAs
+-   Replace informative messages with: rlang::inform(c("this is ", rlang::expr_text(letters)))
+-   WIth the "create_entry" functions that take x_var, y_var, ..., These should be prefixed with a dot internally to avoid conflict if the user has added columns that are named with variables that happen to be used internally.
+-   If you return the same type of output from multiple functions, you should create a function that consistently creates exact the same format (to avoid accidentally inconsistency), and consider making it an S3 class (so you can have a custom print method).
+-   Remove all calls (match.call()), replace with informative error msg
+-   rlang::is_installed()
+-   Add calls to all objects using rlang?
+-   vctrs::%0% for replacing missing
+-   Prepare an example infoframe object to simplify examples.
+
+# read_surveyxact
+-	TEST: Ansi files with colon, semicolon, etc. Short and long Excel files. All kinds of character sets. All kinds of variables.
+-   Tick boxes do not get correct label suffix? Automatically fix NA/FALSE for these? 
+-   Get SX to fix the bug in labels header
+-   Get SX to fix the bug in Excel-sheets being separated into dataset(1)(2), etc.
+-	Get SX to fix bug in Structure.csv having a phantom column at the end...
+-	Alert labelled-author that `df_data <- labelled::set_value_labels(df_data, .labels = df_labels, .strict = FALSE)` fails
+
+## rename_vars_by_label()
+-   Rename variable names in df_data to match labels? Then original var names don't matter.
 
 # step_auto_tick_recode
-* Some form of automatic recode of multiple tick-box items where no cross is missing? Or perhaps strongly advice people not to use them?
+
+-   Some form of automatic recode of multiple tick-box items where no cross is missing? Or perhaps strongly advice people not to use them?
 
 # create_infoframe
+
+-   Better tests and better diagnostics if tests fail: Return tibble
+-   Replace separators with patterns? Or character vector patterns? First letters before numbers? First two characters, etc. if(is.integer(var_group_item_sep)) split on first character, etc.
+-   The check of corresponding group and group_label should rather be checking if all groups have the same group_label, not the other way around
 
 # add_percent
 
 # add_regression
-* Extract dummy recoder?
-# How to distinguish x_var as single latent variable from set of manifest variables?
-# Improve extraction of errors in MplusAutomation::readModels(). New separate function: Extract variables that are failing
-# V2: Rerun without poor variables if NDependent>4: toupper(colnames(rdata)). Separate function to work on output dataframe.
 
-## run_model 
+-   Extract dummy recoder?
+-   loading_cutoff =\> move to add_fit?
+-   V2: How to distinguish x_var as single latent variable from set of manifest variables?
+-   Improve extraction of errors in MplusAutomation::readModels(). New separate function: Extract variables that are failing
+-   V2: Rerun without poor variables if NDependent\>4: toupper(colnames(rdata)). Separate function to work on output dataframe.
+
+## run_model
 
 ## prepare_mplus_model
 
 ## extract_mplus_model
-* Make into broom tidier? Though will be of limited use.
-* cronbach, mcdonald_omega? Or using psych::alpha
+-   Make into broom tidier? Though will be of limited use.
+-   cronbach, mcdonald_omega? Or using psych::alpha
 
 ## prepare_lavaan_model
 
@@ -48,44 +82,114 @@ knitr::opts_chunk$set(echo = TRUE)
 # add_percent_meaning
 
 # add_full_meaning
+-	V1: Template sentences for fit.
+-   V2: Text reporting: Adding adverbial clauses to spice up: If contrast to previous finding.
+-   V2: Text reporting: Summarize findings if all of the same pattern (X positively correlated with all of Y1, Y2, Y3, ... and detailed=FALSE)
+-   V2: Distinguish between first-time mention of a variable within a section (where full x_label is mentioned "Vi finner for x_label at...)
+-	V2: What to do for the "else"-category, those not matched? Leave to user to specify a catch-all regex?
+-   V2: Get someone to translate template sentences to English, German, Nynorsk, etc.
 
 # add_percentbar_chart
 
-# add_percentbar_plot, add_percentbar_plot
 
-# add_forest_chart, add_forest_plot, add_forest_rvg
-
-# add_bivariate_chart, add_bivariate_plot, add_bivariate_rvg
-
-# create_report_entry
+# add_percentbar_plot, add_percentbar_plot, add_forest_chart, add_forest_plot, add_forest_rvg, add_bivariate_chart, add_bivariate_plot, add_bivariate_rvg
 
 # create_report
+-	Split up function into minor parts, preferably finding some R6 solutions.
+-	remove_empty_y_var should remove empty y_var if TRUE
+-	officer::body_add_caption(value = officer::block_caption())
+-   If first variable in a y_var has no response in a category, category order is messed up.
+-   Sorting of variables both within section, but also within a graph/table!
+-   Make function general enough so that it can be used in a pmap-loop for school reports. section1_new_file=TRUE for school reports
+-   Make tables in doc prettier (header formating, left align first column, etc)
+
+### Version 2.0
+
+-   Scatter+trend line plots for linear/binary logistic regression models where x_focus is specified
+-   Forest plot for regression model results
+-   Same plots for ggplot2 as for mschart
+-   Method chapter: response rate (opened/completed), broken down by x_var, representativeness given pop_var, map for gsiid
+-   Also export Rmarkdown/html-file?
+
+### Modify xml-files:
+
+-   Hide axis titles.
+
+-   Right-align axis text by modifying xml-raw data
+
+-   Drop data labels if smaller than 5%
+
+-   Insert this: dLbl\><c:idx val=X_value/><c:delete val="1"/><c:extLst><c:ext uri="{CE6537A1-D6FC-4f65-9D91-7224C49458BB}" xmlns:c15="http://schemas.microsoft.com/office/drawing/2012/chart"/><c:ext uri="{C3380CC4-5D6E-409C-BE32-E72D297353CC}" xmlns:c16="http://schemas.microsoft.com/office/drawing/2014/chart"><c16:uniqueId val="{00000000-BC21-437A-B275-29C6E34D2EC4}"/></c:ext></c:extLst></c:dLbl>\<c:
+
+-   After this: </a:srgbClr></a:solidFill></a:ln><a:effectLst/></c:spPr><c:invertIfNegative val="0"/><c:dLbls>\<c:
+
+-   Strip off all unnecessary dependencies
+
+-   Documentation
+
+-   Excel template
+
+### out of my control:
+
+-   Excel output, table and chart into Excel
+-   Crashes if file is open (<https://github.com/davidgohel/officer/issues/349>)
+-   Also file doesn't open if a crashed Word app is open...
+-   Non-ASCII letters (<https://github.com/ardata-fr/mschart/issues/57>), but workaround works.
 
 # create_report_grouped
-* group-specific reports with automatic email sending
+
+-   group-specific reports with automatic email sending
 
 # utils
+
 ## check_options
+
 ## omitted_recoder
-## print2.rdocx
-* replace utils::zip with officer::unpack_file
+
+-   Rename arguments to snake_case 
+
+# print2.rdocx
+-   replace utils::zip with officer::unpack_file
 
 ## add_element
+
 ## loop across (basically just a wrapper to purrr::pmap)
 
+# create_psychometrics_report
 
-# NAMESPACE
+-   Standard set with functions to conduct psychometric analysis. Summarizes models from various packages, and presents according to common objectives:
+-   TODO: Should split into functions fitting into the tidymodelverse. This requires brooming TAM, mirt, CDM, sirt, lavaan, MplusAutomation, etc.
+-   Aims:
+-   single function to retrieve information on item-specific descriptives
+-   single function to retrieve information on which items are likely worst fitting for unidimensional scale
+-   single function to retrieve information comparing various models (uni, bi/multidimensional, correlated, second order, etc)
 
-# DESCRIPTION
+\*\* Versjon 0.3 \* Endre filnavnet \* argument: Velge hvilke funksjoner som skal kjøres \* argument: Velge hvilke IRT-modeller som skal kjøres (1PL, 2PL, etc) \* funksjon: Trekke ut Wright-map plot som egen funksjon (plot_1a) \* funksjon: Trekke ut ICC plots-loopen for TAM-data, som eegen funksjon \* funksjon: Trekke ut Mplus-modeller som egne funksjoner \* Generalisere mer (særlig grafer) og unngå hardkodede variabelnavn/labels \* Be Alexander Rorbitzh om å kunne endre navn på Plots-mappe \* argument: Endre argument defaults til engelsk/tom \* funksjon: Legge inn fortolkninger som tekst i fit (høy infit, etc). \* funksjon: Item information curves (all in one graph)
+
+-   Bedre struktur på returnert objekt: alle rå-objekter i egen liste (raw). Input i egen liste (input), Alt nyttig i egen liste (\$summary)
+
+-   summary\$mod: tibble, rader=modell, kolonner= person abilities mean, item spread, C alpha, CFA, TLI, RMSEA, SRMR, faktorladningsspredning,
+
+-   summary\$tam_1pl: tibble, rader=item, kolonner=item difficulty, discrimination, outfit, infit, item information curve summary?,
+
+-   funksjon: Excel-output av alt i \$summary-listen, inkl Chart-grafer?.
+
+-   Lage/finne en oppskrift på hele valideringsprosessen, basere output rundt dette.
+
+-   Legge inn flere pakker?
+
+-   Mer om DIF/MI, local independence, Q3, etc
+
+-   Bifaktor/second order-struktur?
+
+-   Når andre pakker er oppdatert (ASCII), fjerne noen endringer av tittel, etc.?
+
+-   Tidyselect?
+
+-   Kontroller og Feilmeldinger (rlang)
 
 # Examples and documentation
 
 # Other
 
-parsnip, broom, yardstick extensions for SEM models: 
-https://www.tidymodels.org/learn/develop/models/ and https://www.tidymodels.org/learn/develop/broom/ and https://www.tidymodels.org/learn/develop/metrics/
-easystats extensions (or not, as they don't yet support tidymodels)
-workflow-package extensions
-parsnip, and returns broom, yardstick)
-		
-
+parsnip, broom, yardstick extensions for SEM models: <https://www.tidymodels.org/learn/develop/models/> and <https://www.tidymodels.org/learn/develop/broom/> and <https://www.tidymodels.org/learn/develop/metrics/> easystats extensions (or not, as they don't yet support tidymodels) workflow-package extensions parsnip, and returns broom, yardstick)
