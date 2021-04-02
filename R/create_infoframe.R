@@ -67,21 +67,19 @@
 #' @importFrom rlang warn abort := set_names .data .env
 #' @importFrom tidyr separate chop pack unpack expand_grid
 #' @importFrom vctrs as_list_of
-#' @importFrom utils View
 #' @export
 #'
 #' @examples
-#' ex_data <- readRDS(system.file("extdata", "ex_survey.RDS", 
-#'                    package="surveyreport", mustWork=TRUE))
-#' obj <- create_infoframe(df=ex_data, 
-#'                         y_var=grep("^[abdefg]_", names(ex_data), value=TRUE),
-#'                         x_var=grep("^x", names(ex_data), value=TRUE),
-#'                         ordinal_var=grep("^[abdefg]_", names(ex_data), value=TRUE),
-#'                         nominal_var=c("xsex", "xhuman", "h_1", "h_2", "h_3", "h_4"),
+#' data("ex_survey1")
+#' obj <- create_infoframe(df=ex_survey1, 
+#'                         y_var=grep("^[abdefgp]_", names(ex_survey1), value=TRUE),
+#'                         x_var=grep("^x", names(ex_survey1), value=TRUE),
+#'                         ordinal_var=grep("^[abdegp]_", names(ex_survey1), value=TRUE),
+#'                         nominal_var=c("x1_sex", "x2_human", "f_uni"),
 #'                         add_x_univariates=TRUE,
 #'                         add_y_univariates=TRUE)
-#' obj$var_frame
-#' obj$design_frame
+#' #obj$var_frame
+#' #obj$design_frame
 
 create_infoframe <-
 	function(df,
@@ -136,20 +134,27 @@ create_infoframe <-
 				}
 			})
 		}
-		if(!all(y_var %in% colnames(df))) rlang::abort(paste0("Following y_var not found in df: c(", paste0(y_var[!y_var %in% colnames(df)], collapse=", "), ")"))
-		if(!all(x_var %in% colnames(df))) rlang::abort(paste0("Following x_var not found in df: c(", paste0(x_var[!x_var %in% colnames(df)], collapse=", "), ")"))
+		if(!all(y_var %in% colnames(df))) rlang::abort(c(x="Following y_var not found in df:", 
+														 rlang::expr_text((y_var[!y_var %in% colnames(df)]))))
+		if(!all(x_var %in% colnames(df))) rlang::abort(c(x="Following x_var not found in df:", 
+														 rlang::expr_text((x_var[!x_var %in% colnames(df)]))))
 
-		y_lacks_sep <- grep(var_group_item_sep, y_var, value = TRUE, invert = TRUE)
-		if(length(y_lacks_sep)>0L) rlang::warn(paste0("The following y_var could not be split: c(", paste0(y_lacks_sep, collapse=", "), ")"))
+		if(is.character(var_group_item_sep)) {
+			y_lacks_sep <- grep(var_group_item_sep, y_var, value = TRUE, invert = TRUE)
+			if(length(y_lacks_sep)>0L) rlang::warn(c(x="The following y_var could not be split:", 
+													 rlang::expr_text((y_lacks_sep))))
+		}
+
 		x_lacks_sep <- grep(var_group_item_sep, x_var, value = TRUE, invert = TRUE)
-		if(length(x_lacks_sep)>0L) rlang::warn(paste0("The following x_var could not be split: c(", paste0(x_lacks_sep, collapse=", "), ")"))
+		if(length(x_lacks_sep)>0L) rlang::warn(c(x="The following x_var could not be split:", 
+												 rlang::expr_text((x_lacks_sep))))
+		
 
-
-
+		suppressWarnings(expr = {
 		var_frame <-
 			labelled::look_for(df, details=FALSE) %>%
-			tidyr::separate(col=.data$variable, into=c("group", NA), sep=var_group_item_sep, remove = FALSE, convert = FALSE, extra = "merge") %>%
-			tidyr::separate(col=.data$label, into=c("group_label", "label"), sep=varlabel_group_item_sep, convert = FALSE, extra = "merge") %>%
+			tidyr::separate(col=.data$variable, into=c("group", NA), sep=var_group_item_sep, remove = FALSE, convert = FALSE, extra = "merge", fill="right") %>%
+			tidyr::separate(col=.data$label, into=c("group_label", "label"), sep=varlabel_group_item_sep, convert = FALSE, extra = "merge", fill="right") %>%
 			dplyr::rename(var = all_of("variable")) %>%
 			dplyr::mutate(label = dplyr::if_else(is.na(.data$label) | nchar(.data$label)==0L, .data$group_label, .data$label),
 						  role = dplyr::if_else(.data$var %in% .env$y_var, "y", 
@@ -158,7 +163,7 @@ create_infoframe <-
 						  type = type_checker(var=.data$var),
 						  colour_set = colour_picker(var=.data$type)) %>%
 			dplyr::arrange(.data$group, .data$group_label, .data$var, .data$label)
-
+		})
 
 		## Error checking
 		n_group_label <- 
@@ -174,23 +179,30 @@ create_infoframe <-
 			dplyr::distinct(.data$group, .data$role, .data$type, .data$colour_set, .keep_all = T) %>% 
 			nrow()
 
+
 		if(n_group_label != n_group) {
-			var_frame %>% 
+			err_groups <-
+				var_frame %>% 
 				dplyr::distinct(.data$group, .data$group_label, .keep_all = T) %>% 
 				dplyr::add_count(.data$group) %>% 
-				dplyr::filter(.data$n > 1) %>% 
-				utils::View() # Only show what is relevant
-			error_msg <- "You need to check that your battery-item pattern is valid, and that names and labels match accordingly.\n There is a mismatch between "
-			rlang::abort(paste0(error_msg, "group names (", n_group, ") and labels (", n_group_label, "). "))
+				dplyr::filter(.data$n > 1) %>%
+				dplyr::select(dplyr::all_of(c("var", "group", "group_label", "label")))
+			error_msg <- "Check that the battery-item pattern is valid, and that names and labels match accordingly.
+			There is a mismatch between "
+			rlang::abort(c("Variable group and group label mismatch:",
+						   i="Each variable group must contain only one unique group label.",
+						   x="Problem with variable group(s):",
+						   rlang::quo_text(err_groups)))
 		}
 		if(n_group_aux != n_group) {
+			err_obj <-
 			var_frame %>% 
 				dplyr::distinct(.data$group, .data$role, .data$type, .data$colour_set, .keep_all = T) %>% 
 				dplyr::add_count(.data$group) %>% 
-				dplyr::filter(.data$n>1) %>%
-				utils::View() # Only show what is relevant
+				dplyr::filter(.data$n>1)
 			error_msg <- "Please ensure all data columns in a group have the same role, type and colour_set. Mismatch between "
-			rlang::abort(paste0(error_msg, "groups (", n_group, ") and role-type-colourset (", n_group_aux, "). "))
+			rlang::abort(paste0(error_msg, "groups (", n_group, ") and role-type-colourset (", n_group_aux, "). "),
+						 ... = err_obj)
 		}
 
 		if(add_constructs) {

@@ -103,7 +103,8 @@ reporter <-
 		if(length(names(template_styles)) != 2L || !all(c("surveyreport_style", "template_style") %in% names(template_styles))) {
 			rlang::abort(c("Unexpected Column Names in template_styles", 
 						   i = "Argument `template_styles` must refer to a data frame with columns surveyreport_style and template_style.",
-						   x = paste0("Supplied data frame contains c(", paste0(names(template_styles), collapse=", "), ").")))
+						   x = "Supplied data frame contains ", 
+						   rlang::quo_text(names(template_styles))))
 		}
 		grab_temp_style <- function(temp_styles=template_styles, style) {
 			dplyr::filter(temp_styles, .data$surveyreport_style == .env$style) %>% pull(.data$template_style)
@@ -184,14 +185,18 @@ reporter <-
 			
 			if(is.null(design_frame[["section1"]])) {
 				if(!is.null(section_divider1) && (length(section_divider1) != 1L || !section_divider1 %in% section_options)) {
-					rlang::abort(paste0("Global argument `section_divider1=`", " must be a string length 1, and one of c(", paste0(section_options, collapse=","), ") or NULL when variable 'section1' in design_frame is not provided."))
+					rlang::abort(c(i="Global argument `section_divider1` must be a string length 1, and one of ", 
+								   rlang::quo_text(section_options), 
+								   i=" or NULL when column 'section1' in design_frame is not provided."))
 				}
 				design_frame[["section1"]] <- if(!is.null(section_divider1)) design_frame[[section_divider1]] else NA_character_
 				added_parts <- c(added_parts, "section1")
 			}
 			if(is.null(design_frame[["section2"]])) {
 				if(!is.null(section_divider2) && (length(section_divider2) != 1L || !section_divider2 %in% section_options)) {
-					rlang::abort(paste0("Global argument `section_divider2=`", " must be a string length 1, and one of c(", paste0(section_options, collapse=","), ") or NULL when variable 'section2' in design_frame is not provided."))
+					rlang::abort(c(i="Global argument `section_divider2` must be a string length 1, and one of ", 
+								   rlang::quo_text(section_options), 
+								   i=" or NULL when column 'section2' in design_frame is not provided."))
 				}
 				design_frame[["section2"]] <- if(!is.null(section_divider2)) design_frame[[section_divider2]] else NA_character_
 				added_parts <- c(added_parts, "section2")
@@ -200,7 +205,9 @@ reporter <-
 			
 			if(is.null(design_frame[["sort_order"]])) {
 				if(!is.null(sorting) && (length(sorting)!=1L || !sorting %in% sorting_options)) {
-					rlang::abort(paste0("Global argument `sorting=`", " must be a string length 1, and one of c(", paste0(sorting_options, collapse = ", "), ") or NULL when variable 'sort_order' in design_frame is not provided."))
+					rlang::abort(c(i="Global argument `sorting` must be a string length 1, and one of ", 
+								   rlang::quo_text(sorting_options), 
+								   i=" or NULL when column 'sort_order' in design_frame is not provided."))
 				}
 				design_frame[["sort_order"]] <- if(!is.null(sorting)) sorting else "y_var"
 				added_parts <- c(added_parts, "sort_order")
@@ -224,7 +231,8 @@ reporter <-
 			# 	added_parts <- c(added_parts, "x_colour_set")
 			# }
 			# Return warnings
-			if(length(added_parts)>0L) rlang::warn(paste0("Added parts that were missing in design_frame: ", paste0(added_parts, collapse=",")))
+			if(length(added_parts)>0L) rlang::warn(c("Added parts that were missing in design_frame: ", 
+													 rlang::quo_text(added_parts)))
 			
 			design_frame <- check_options(df = design_frame, df_var = "est", global_default = NA_real_, options = numeric())
 			design_frame <- check_options(df = design_frame, df_var = "pval", global_default = NA_real_, options = numeric())
@@ -292,7 +300,7 @@ reporter <-
 					names()
 				
 				if(length(problem_singular)>0L) {
-					rlang::warn(paste0("There is only NA in ", paste0(problem_singular, collapse=","), ". Will skip it."))
+					rlang::warn(c("There is only NA in ", rlang::quo_text(problem_singular), ". Will skip."))
 					return()
 				}
 				
@@ -312,7 +320,8 @@ reporter <-
 				}
 				
 				if(any(is.na(y_colour_set)) || !all(is_colour(y_colour_set))) {
-					rlang::warn("No valid colours provided. Using default.") # SHOULD THIS NOT ALREADY SET THESE COLOURS??
+					rlang::warn("No valid colours provided in ", 
+								rlang::quo_text(y_colour_set), ". Using default.") # SHOULD THIS NOT ALREADY SET THESE COLOURS??
 				}
 				
 				
@@ -344,10 +353,10 @@ reporter <-
 									  category = labelled::to_character(.data$val),
 									  val = as.integer(haven::as_factor(.data$val))) %>% # Problem here if first variable lacks a category
 						{if(drop_na_y) dplyr::filter(., !is.na(.data$category)) else .} %>%
-						{if(!drop_na_y) dplyr::mutate(., category = dplyr::if_else(is.na(.data$category), "<NA>", .data$category)) else .} %>%
+						{if(!drop_na_y) dplyr::mutate(., category = rlang::`%|%`(.data$category, "<NA>")) else .} %>%
 						{if(drop_na_y) dplyr::filter(., !is.na(.data$val)) else .} %>%
 						{if(drop_na_x & !is.na(x_var)) dplyr::filter(., !is.na(.data$var)) else .} %>%
-						{if(!drop_na_x | is.na(x_var)) dplyr::mutate(., var = dplyr::if_else(is.na(.data$var), "<NA>", .data$var))} %>%
+						{if(!drop_na_x | is.na(x_var)) dplyr::mutate(., var = rlang::`%|%`(.data$var, "<NA>")) else .} %>%
 						dplyr::add_count(.data$var, name = "n_per_var") %>%
 						dplyr::count(.data$var, .data$n_per_var, .data$val, .data$category, name = "n_per_var_val") %>%
 						dplyr::mutate(percent = round(.data$n_per_var_val/.data$n_per_var, 3)) %>%
@@ -371,7 +380,7 @@ reporter <-
 					# {if(sort=="alphabetical") dplyr::arrange(., if(desc) desc(var) else var, val) else .} %>%
 					# {if(sort=="sum_upper_categories") dplyr::group_by(., var) %>%
 					# 		dplyr::mutate(sort_var = ifelse(category = )) %>%
-					# 		dplyr::arrange(if(desc) desc(sort_var) else sort_var, val) else .} %>%
+					# 		dplyr::arrange(if(desc) dplyr::desc(sort_var) else sort_var, val) else .} %>%
 					# {if(sort=="alphabetical") dplyr::arrange(., if(desc) desc(var) else var, val) else .} %>%
 					# {if(sort=="alphabetical") dplyr::arrange(., if(desc) desc(var) else var, val) else .} %>%
 					#"average", "sum_upper_categories", "alphabetical", "sum_lower_categories", "significance",
@@ -452,9 +461,9 @@ reporter <-
 						dplyr::summarize(dplyr::across(.cols = dplyr::all_of(y_label), .fns = ~round(mean(., na.rm=TRUE), digits = round_digits+1)), n_per_var=dplyr::n()) %>%
 						dplyr::ungroup() %>%
 						tidyr::pivot_longer(cols = dplyr::all_of(y_label), names_to = "var", values_to = "val")  %>%
-						{if(drop_na_y) dplyr::filter(., !is.na(.data$category)) else dplyr::mutate(., category = dplyr::if_else(is.na(.data$category), "<NA>", .data$category))} %>%
+						{if(drop_na_y) dplyr::filter(., !is.na(.data$category)) else dplyr::mutate(., category = rlang::`%|%`(.data$category, "<NA>"))} %>%
 						{if(drop_na_y) dplyr::filter(., !is.na(.data$val)) else .} %>%
-						{if(drop_na_x) dplyr::filter(., !is.na(.data$var)) else dplyr::mutate(., var = dplyr::if_else(is.na(.data$var), "<NA>", .data$var))} %>%
+						{if(drop_na_x) dplyr::filter(., !is.na(.data$var)) else dplyr::mutate(., var = rlang::`%|%`(.data$var, "<NA>"))} %>%
 						{if(show_n_chart=="axis" | (show_n_chart=="auto" & dplyr::n_distinct(.[["n_per_var"]])>1L)) {
 							tidyr::unite(., col = "var", all_of(c("var", "n_per_var")), sep = " (N=", remove = TRUE, na.rm = TRUE) %>%
 								dplyr::mutate(var = paste0(.data$var, ")"))} else .} %>%
@@ -494,9 +503,9 @@ reporter <-
 						dplyr::mutate(var = labelled::to_character(.data$var),
 									  category = labelled::to_character(.data$val),
 									  val = as.integer(haven::as_factor(.data$val))) %>% # Problem here if first variable lacks a category
-						{if(.env$drop_na_y) dplyr::filter(., !is.na(.data$category)) else dplyr::mutate(., category = dplyr::if_else(is.na(.data$category), "<NA>", .data$category))} %>%
+						{if(.env$drop_na_y) dplyr::filter(., !is.na(.data$category)) else dplyr::mutate(., category = rlang::`%|%`(.data$category, "<NA>"))} %>%
 						{if(.env$drop_na_y) dplyr::filter(., !is.na(.data$val)) else .} %>%
-						{if(.env$drop_na_x & !is.na(.env$x_var)) dplyr::filter(., !is.na(.data$var)) else dplyr::mutate(., var = dplyr::if_else(is.na(.data$var), "<NA>", .data$var))} %>%
+						{if(.env$drop_na_x & !is.na(.env$x_var)) dplyr::filter(., !is.na(.data$var)) else dplyr::mutate(., var = rlang::`%|%`(.data$var, "<NA>"))} %>%
 						dplyr::add_count(.data$var, .data[[x_var]], name = "n_per_var_var2") %>%
 						dplyr::count(.data$var, .data[[x_var]], .data$n_per_var_var2, .data$val, .data$category, name = "n_per_var_val_var2") %>%
 						dplyr::mutate(percent = round(.data$n_per_var_val_var2/.data$n_per_var_var2*100, round_digits)) %>%

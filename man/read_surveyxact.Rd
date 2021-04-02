@@ -33,10 +33,6 @@ First export the data from SurveyXact either as Excel or a set of CSV-files
     further processing.
 }
 \examples{
-ex_survey2_xlsx <- 
-      read_surveyxact(filepath = 
-                      system.file("extdata", "ex_survey2.xlsx",
-                      package = "surveyreport", mustWork = TRUE))
 dataset <- system.file("extdata", "ex_survey2_tab_utf16", "dataset.csv",
                       package = "surveyreport", mustWork = TRUE)
 labels <- system.file("extdata", "ex_survey2_tab_utf16", "labels.csv",

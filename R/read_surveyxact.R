@@ -18,10 +18,10 @@
 #' @export
 #'
 #' @examples
-#' ex_survey2_xlsx <- 
-#'       read_surveyxact(filepath = 
-#'                       system.file("extdata", "ex_survey2.xlsx",
-#'                       package = "surveyreport", mustWork = TRUE))
+# ex_survey2_xlsx <-
+#       read_surveyxact(filepath =
+#                       system.file("extdata", "ex_survey2.xlsx",
+#                       package = "surveyreport", mustWork = TRUE))
 #' dataset <- system.file("extdata", "ex_survey2_tab_utf16", "dataset.csv",
 #'                       package = "surveyreport", mustWork = TRUE)
 #' labels <- system.file("extdata", "ex_survey2_tab_utf16", "labels.csv",
@@ -102,10 +102,10 @@ read_surveyxact <-
 							  x=paste0("`filepath` is currently a ", class(filepath)[1], " of length ", paste0(length(filepath), collapse=","))))
 
 		if(any(!c("variableName", "questionText") %in% colnames(df_vars))) {
-			rlang::abort(paste0("Could not find columns ", paste0(c("variableName", "questionText"), collapse=", "), " in Structure"))
+			rlang::abort(c(x="Could not find columns variableName and questionText in Structure"))
 		}
 		if(any(!c("variableName", "value", "valueLabel") %in% colnames(df_labels))) {
-			rlang::abort(paste0("Could not find columns ", paste0(c("variableName", "value", "valueLabel"), collapse=", "), " in Labels", collapse=", "))
+			rlang::abort(c(x="Could not find columns c(variableName, value, valueLabel) in Labels"))
 		}
 		
 		for(col in names(df_data)) {
@@ -141,8 +141,8 @@ read_surveyxact <-
 				labelled::val_labels(df_data[,i]) <- df_labels[[i]]
 			} else unmatched <- c(unmatched, i)
 		}
-		if(length(unmatched)>0L) rlang::warn(paste0("Unable to find following Labels-variables in Dataset-variables:",
-													paste0(unmatched, collapse=", ")))
+		if(length(unmatched)>0L) rlang::warn(c(x="Unable to find following Labels-variables in Dataset-variables:",
+											   rlang::expr_text(unmatched)))
 		# df_data <- labelled::set_value_labels(df_data, .labels = df_labels, .strict = FALSE)
 		df_data
 	}

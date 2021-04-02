@@ -53,3 +53,13 @@ A data frame with model specifications in simplified form (y_var=Y, independent=
 \description{
 Given the specifications of design_frame in obj, run regression analyses.
 }
+\examples{
+obj <- create_infoframe(df=ex_survey1, 
+                        y_var=grep("^[abdefgp]_", names(ex_survey1), value=TRUE),
+                        x_var=grep("^x", names(ex_survey1), value=TRUE),
+                        ordinal_var=grep("^[abdegp]_", names(ex_survey1), value=TRUE),
+                        nominal_var=c("x1_sex", "x2_human", "f_uni"),
+                        add_x_univariates=TRUE,
+                        add_y_univariates=TRUE)
+#obj <- add_analyses(obj)
+}

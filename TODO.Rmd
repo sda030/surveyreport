@@ -15,21 +15,12 @@ knitr::opts_chunk$set(echo = TRUE)
 # Overall design
 
 -   Each of the add\_\* functions should call an underlying hidden function that generates the specified output for a single case, and the add\_\* function will loop across all rows in the design frame with purrr::pmap() and attach the output using a standard helper function. Then an autoreport-function could do looping itself by only calling underlying functions
--   class-based objects, or just lists for now? input/output as list of df, var_frame and design_frame. Single input, single output.
+-   S3 class-based objects, or just lists for now? input/output as list of df, var_frame and design_frame. Single input, single output.
 -   Avoid :: by @importFrom pkg fun to save evaluation time
--   Move "NIFU_Normal første" and other globals to arguments
--   vctr::vec_assert
--   missing() instead of is.na() for arguments?
--   Enumerate options in argument: <https://principles.tidyverse.org/def-enum.html>
--   rlang::`%||%` whenever possible
--   rlang::`%|%` for when replacing NAs
--   Replace informative messages with: rlang::inform(c("this is ", rlang::expr_text(letters)))
+
+-   missing() instead of is.null() for arguments?
 -   WIth the "create_entry" functions that take x_var, y_var, ..., These should be prefixed with a dot internally to avoid conflict if the user has added columns that are named with variables that happen to be used internally.
--   If you return the same type of output from multiple functions, you should create a function that consistently creates exact the same format (to avoid accidentally inconsistency), and consider making it an S3 class (so you can have a custom print method).
--   Remove all calls (match.call()), replace with informative error msg
--   rlang::is_installed()
--   Add calls to all objects using rlang?
--   vctrs::%0% for replacing missing
+-   If you return the same type of output from multiple functions, you should create a function that consistently creates exact the same format (to avoid accidental inconsistency), and consider making it an S3 class (so you can have a custom print method).
 -   Prepare an example infoframe object to simplify examples.
 
 # read_surveyxact
@@ -48,10 +39,11 @@ knitr::opts_chunk$set(echo = TRUE)
 -   Some form of automatic recode of multiple tick-box items where no cross is missing? Or perhaps strongly advice people not to use them?
 
 # create_infoframe
-
--   Better tests and better diagnostics if tests fail: Return tibble
--   Replace separators with patterns? Or character vector patterns? First letters before numbers? First two characters, etc. if(is.integer(var_group_item_sep)) split on first character, etc.
+-   Better tests and better diagnostics if tests fail: 
+-   Replace separators with patterns? Or character vector patterns? First letters before numbers? 
 -   The check of corresponding group and group_label should rather be checking if all groups have the same group_label, not the other way around
+
+
 
 # add_percent
 
@@ -95,6 +87,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # add_percentbar_plot, add_percentbar_plot, add_forest_chart, add_forest_plot, add_forest_rvg, add_bivariate_chart, add_bivariate_plot, add_bivariate_rvg
 
 # create_report
+-   vctr::vec_assert
 -	Split up function into minor parts, preferably finding some R6 solutions.
 -	remove_empty_y_var should remove empty y_var if TRUE
 -	officer::body_add_caption(value = officer::block_caption())
@@ -143,10 +136,6 @@ knitr::opts_chunk$set(echo = TRUE)
 # utils
 
 ## check_options
-
-## omitted_recoder
-
--   Rename arguments to snake_case 
 
 # print2.rdocx
 -   replace utils::zip with officer::unpack_file

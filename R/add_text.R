@@ -36,15 +36,8 @@
 #' @export
 #'
 #' @examples
-#' ex_data <- readRDS(system.file("extdata", "ex_survey.RDS", 
-#'                    package="surveyreport", mustWork=TRUE))
-#' obj <- create_infoframe(df=ex_data, 
-#'                         y_var=grep("[abdefg]_", names(ex_data), value=TRUE),
-#'                         x_var=grep("^x", names(ex_data), value=TRUE),
-#'                         ordinal_var=grep("^[abdefg]_", names(ex_data), value=TRUE),
-#'                         nominal_var=c("xsex", "xhuman", "h_1", "h_2", "h_3", "h_4"))
-#' obj <- add_text(obj=obj)
-#' obj$design_frame[, grepl("interpret_", names(obj$design_frame))]
+#' #obj <- add_text(obj=obj)
+#' #obj$design_frame[, grepl("interpret_", names(obj$design_frame))]
 #' 
 add_text <- function(obj, 
 					 template_xlsx=NULL, 
@@ -55,7 +48,7 @@ add_text <- function(obj,
 
 	template_xlsx <- 
 		template_xlsx %||% 
-		system.file("extdata", "text_translations_template.xlsx", 
+		system.file("templates", "text_translations_template.xlsx", 
 					package = "surveyreport", mustWork = TRUE)
 	first_mention <- rlang::arg_match(arg = first_mention)
 
@@ -64,7 +57,8 @@ add_text <- function(obj,
 	if(!all(c("type", "regex", "str") %in% names(trans))) {
 		rlang::abort(message = c("Unable to find columns:", 
 								 i="template_xlsx must contain (at least) columns named `type`, `regex`, and `str`.",
-								 x=paste0("Columns provided are c(", paste0(names(trans), collapse=","), ").")))
+								 x="Columns provided are ", 
+								 rlang::expr_text(names(trans))))
 	}
 
 	df_tmp <-

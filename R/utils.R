@@ -16,8 +16,8 @@ assert_valid_infoframe <- function(obj) {
 	   !is.data.frame(obj[["design_frame"]])) {
 
 		X <- paste0("`obj` is a ", class(obj)[[1]], " of length ", length(obj),
-					 " with elements of class ", 
-					 paste0(unname(purrr::map_chr(obj, ~class(.x)[[1]])), collapse=","))
+					 " with elements of class \n", 
+					 rlang::quo_text(unname(purrr::map_chr(obj, ~class(.x)[[1]]))))
 		rlang::abort(c("Invalid `obj`:",
 					   i = "`obj` must be a list with three elements.",
 					   i = "The elements must be named `df`, `var_frame` and `design_frame`.",
@@ -26,13 +26,12 @@ assert_valid_infoframe <- function(obj) {
 	}
 	X <- unique(unlist(obj$var_frame$var))[!unique(unlist(obj$var_frame$var)) %in% names(obj$df)]
 	if(length(X) > 0L) {
-		print(2)
 		rlang::abort(c("Inconsistent variable names:", 
 					   i = "Each entry in `obj$var_frame$var` should exist in `obj$df`.",
-					   x = paste0("Following variables were not found in `df`: ", paste0(X, collapse=","))))
+					   x = "Following variables were not found in `df`: ", 
+					   rlang::quo_text(X)))
 	}
 	if(nrow(obj$design_frame)==0L) {
-		print(3)
 		rlang::abort(c("Empty design_frame:",
 					 i = "design_frame must contain at least one row.",
 					 x = "design_frame contains 0 zeros."))
@@ -243,10 +242,11 @@ check_options <- function(df, df_var, global_default, options) {
 		if(!is.numeric(options) && !is.numeric(df[[df_var]])) {
 			invalid <- unique(df[[df_var]][!df[[df_var]] %in% options])
 			if(length(invalid) > 0L) {
-				rlang::abort(c("Incorrect options.",
-							 x=paste0('Variable `', df_var, '` in design frame contains invalid options c(',
-											  paste0(invalid, collapse=","), ').'), 
-							i=paste0('Please use one of: `c(', paste0(options, collapse=", "), ')')))
+				rlang::abort(c("Incorrect options:",
+							 x=paste0('Variable `', df_var, '` in design frame contains invalid options'),
+								rlang::quo_text(invalid), 
+							i='Please use one of:', 
+							rlang::quo_text(options)))
 			}
 		} else if(class(options) != class(df[[df_var]])) {
 			rlang::abort(c(x=paste0('Variable `', df_var, '` in design frame is of class ', class(df[[df_var]])),

@@ -49,13 +49,6 @@ Given the design_frame information on fit (run add_analysis first) for
     fitting variables, which is not covered by this function.
 }
 \examples{
-ex_data <- readRDS(system.file("extdata", "ex_survey.RDS", 
-                   package="surveyreport", mustWork=TRUE))
-obj <- create_infoframe(df=ex_data, 
-                        y_var=grep("[abdefg]_", names(ex_data), value=TRUE),
-                        x_var=grep("^x", names(ex_data), value=TRUE),
-                        ordinal_var=grep("^[abdefg]_", names(ex_data), value=TRUE),
-                        nominal_var=c("xsex", "xhuman", "h_1", "h_2", "h_3", "h_4"))
-#obj <- add_regression(obj)
+#obj <- add_analyses(obj)
 #obj <- add_fit(obj)
 }

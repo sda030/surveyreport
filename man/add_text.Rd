@@ -48,14 +48,7 @@ Based on the inputs, adds semi-random text interpretations for text-based
     report generation.
 }
 \examples{
-ex_data <- readRDS(system.file("extdata", "ex_survey.RDS", 
-                   package="surveyreport", mustWork=TRUE))
-obj <- create_infoframe(df=ex_data, 
-                        y_var=grep("[abdefg]_", names(ex_data), value=TRUE),
-                        x_var=grep("^x", names(ex_data), value=TRUE),
-                        ordinal_var=grep("^[abdefg]_", names(ex_data), value=TRUE),
-                        nominal_var=c("xsex", "xhuman", "h_1", "h_2", "h_3", "h_4"))
-obj <- add_text(obj=obj)
-obj$design_frame[, grepl("interpret_", names(obj$design_frame))]
+#obj <- add_text(obj=obj)
+#obj$design_frame[, grepl("interpret_", names(obj$design_frame))]
 
 }

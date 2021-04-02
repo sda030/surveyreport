@@ -64,5 +64,6 @@ testthat::test_that("default usage", code = {
 	
 	testthat::expect_error(omitted_recoder_df(input[,4]), regex="Vectors not accepted.") # Should fail
 	testthat::expect_identical(omitted_recoder_df(input[,4], accept_vector=T), c(0,0,0,0,0,0,0,NA,NA))
-	testthat::expect_identical(omitted_recoder_df(input[,4, drop=F]), input[,4, drop=F]) # Output should equal input
+	testthat::expect_warning(identical(omitted_recoder_df(input[,4, drop=F]), input[,4, drop=F]), 
+							 regexp = "Unable to recode single-column data.frame without knowing context.") 
 })

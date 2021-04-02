@@ -27,7 +27,15 @@
 #' @importFrom rlang abort warn .data
 #'
 #' @return A data frame with model specifications in simplified form (y_var=Y, independent=>X), estimate of the regression coefficient if any, and model fit indices if any.
-
+#' @examples 
+#' obj <- create_infoframe(df=ex_survey1, 
+#'                         y_var=grep("^[abdefgp]_", names(ex_survey1), value=TRUE),
+#'                         x_var=grep("^x", names(ex_survey1), value=TRUE),
+#'                         ordinal_var=grep("^[abdegp]_", names(ex_survey1), value=TRUE),
+#'                         nominal_var=c("x1_sex", "x2_human", "f_uni"),
+#'                         add_x_univariates=TRUE,
+#'                         add_y_univariates=TRUE)
+#' #obj <- add_analyses(obj)
 add_analyses <- 
 	function(obj,
 			 cluster = NA,
@@ -98,7 +106,7 @@ add_analyses <-
 		dplyr::filter(!is.na(.data$x_var)) %>%
 		purrr::pwalk(function(x_var, x_type) {
 			if(!x_var %in% colnames(df)) {
-				rlang::abort(message = paste0("Following x_var not found in df: c(", paste0(x_var, collapse=","), ")"))
+				rlang::abort(message = paste0("Following x_var not found in df:", rlang::expr_text(x_var)))
 			}
 			if(x_type %in% c("ordinal", "nominal")) {
 				if(!ignore_x_type &&
@@ -212,7 +220,7 @@ run_single_analysis <- function(df,
 	}
 	
 	if(length(cluster)>1L) {
-		rlang::abort(message = paste0("Max 1 `cluster` is allowed. Problem with ", paste0(cluster, collapse=",")))
+		rlang::abort(message = c("Max 1 `cluster` is allowed. Problem with ", rlang::expr_text(cluster)))
 	}
 	if(!is.na(cluster) && !cluster %in% colnames(df)) {
 		rlang::abort(message = paste0("Following `cluster` not found in df: ", cluster))
@@ -475,14 +483,8 @@ extract_mplus_model <- function(mod, y_var, y_group, x_var, x_group) {
 #' @return design_frame with fit interpretation added as a column.
 #' @export
 #' @examples
-#' ex_data <- readRDS(system.file("extdata", "ex_survey.RDS", 
-#'                    package="surveyreport", mustWork=TRUE))
-#' obj <- create_infoframe(df=ex_data, 
-#'                         y_var=grep("[abdefg]_", names(ex_data), value=TRUE),
-#'                         x_var=grep("^x", names(ex_data), value=TRUE),
-#'                         ordinal_var=grep("^[abdefg]_", names(ex_data), value=TRUE),
-#'                         nominal_var=c("xsex", "xhuman", "h_1", "h_2", "h_3", "h_4"))
-#' #obj <- add_regression(obj)
+
+#' #obj <- add_analyses(obj)
 #' #obj <- add_fit(obj)
 
 add_fit <- function(obj, cutoff_chisq=.05,

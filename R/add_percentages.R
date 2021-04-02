@@ -24,11 +24,12 @@
 #' @export 
 #'
 #' @examples
+#' # add_percentages(obj)
 
 add_percentages <- function(df, design_frame, set="upper", percent=TRUE, round_digits=0) {
 	
 	set_options <- c("top", "upper", "mid_upper", "lower", "mid_lower", "bottom")
-	if(!(!is.null(set) && length(set)==1L && set %in% set_options)) rlang::abort(paste0("set must be one of c("), paste0(set_options, collapse=","), ")")
+	if(!(!is.null(set) && length(set)==1L && set %in% set_options)) rlang::abort(c("set must be one of"), rlang::expr_text(set_options))
 	purrr::pmap_dfr(.l = design_frame, .f=function(Y, X, ...) {
 		df %>%
 			dplyr::select(y=dplyr::all_of(Y), x=dplyr::all_of(X)) %>%
@@ -50,5 +51,5 @@ add_percentages <- function(df, design_frame, set="upper", percent=TRUE, round_d
 			dplyr::rename_with(.cols = dplyr::matches("_[0-9]*$"), .fn = ~gsub("_[0-9]*$", "", .))
 	}) %>%
 		dplyr::full_join(x = design_frame, y=., by=c("X", "Y")) %>%
-		dplyr::mutate(dplyr::across(dplyr::matches("^p_[0-9]*$"), ~ifelse(is.na(.), 0, .)))
+		dplyr::mutate(dplyr::across(dplyr::matches("^p_[0-9]*$"), ~rlang::`%|%`(., 0L)))
 }

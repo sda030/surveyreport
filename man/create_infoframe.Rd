@@ -106,15 +106,14 @@ Will create a list with the original data, a data column frame (codebook),
     be run if the original data has been changed.
 }
 \examples{
-ex_data <- readRDS(system.file("extdata", "ex_survey.RDS", 
-                   package="surveyreport", mustWork=TRUE))
-obj <- create_infoframe(df=ex_data, 
-                        y_var=grep("^[abdefg]_", names(ex_data), value=TRUE),
-                        x_var=grep("^x", names(ex_data), value=TRUE),
-                        ordinal_var=grep("^[abdefg]_", names(ex_data), value=TRUE),
-                        nominal_var=c("xsex", "xhuman", "h_1", "h_2", "h_3", "h_4"),
+data("ex_survey1")
+obj <- create_infoframe(df=ex_survey1, 
+                        y_var=grep("^[abdefgp]_", names(ex_survey1), value=TRUE),
+                        x_var=grep("^x", names(ex_survey1), value=TRUE),
+                        ordinal_var=grep("^[abdegp]_", names(ex_survey1), value=TRUE),
+                        nominal_var=c("x1_sex", "x2_human", "f_uni"),
                         add_x_univariates=TRUE,
                         add_y_univariates=TRUE)
-obj$var_frame
-obj$design_frame
+#obj$var_frame
+#obj$design_frame
 }

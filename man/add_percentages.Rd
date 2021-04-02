@@ -34,3 +34,6 @@ add_percentages(
 \description{
 Add percentages to design frame, with various options, for later processing.
 }
+\examples{
+# add_percentages(obj)
+}
