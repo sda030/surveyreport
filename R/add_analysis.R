@@ -1,61 +1,60 @@
 
 #' Add Analyses To A Design Frame
-#' 
+#'
 #' Given the specifications of design_frame in obj, run regression analyses.
-#' 
+#'
 #' @param obj A list as returned from create_infoframe()
-#' @param engine either "mplus", "lavaan" or "lm". Currently only supports mplus.
+#' @param engine either "mplus", "lavaan" or "lm". Currently only supports
+#'   mplus.
 #' @param estimator "Either "wlsmv", "mlr" or NA.
-#' @param ignore_x_type Logical, default is FALSE. Whether to ignore the type 
-#'     of the independent variable (such as ordinal, nominal) and treat them 
-#'     as they are stored (e.g. model as continuous/binary).
+#' @param ignore_x_type Logical, default is FALSE. Whether to ignore the type of
+#'   the independent variable (such as ordinal, nominal) and treat them as they
+#'   are stored (e.g. model as continuous/binary).
 #' @param ignore_dummy01 Logical, default is FALSE. If FALSE, will automatically
-#'     adjust binary variables such that the lowest category is zero, and the 
-#'     highest is 1.
+#'   adjust binary variables such that the lowest category is zero, and the
+#'   highest is 1.
 #' @param warn_low_n Logical, default is FALSE. If TRUE ????
 #' @param remove_text_var Logical, default is TRUE. If TRUE, will automatically
-#'     drop all variables with type=="text", except for cluster-variable.
+#'   drop all variables with type=="text", except for cluster-variable.
 #' @param remove_empty_y_var Logical, default is TRUE. If TRUE, ???
 #' @param drop_duplicates Logical, default is TRUE. If TRUE, will automatically
-#'     remove duplicate rows in design frame.
+#'   remove duplicate rows in design frame.
 #' @param path Path to saving Mplus files. Default is a temporary folder.
-#' @param cluster Character string identifying the variable used as cluster-identifier.
+#' @param cluster Character string identifying the variable used as
+#'   cluster-identifier.
+#' @param adjust_dummy01 Whether to fix dummies with lowest category above 0.
 #' @importFrom purrr map map_chr pmap_dfr map_lgl pwalk
 #' @importFrom tidyr pivot_wider
 #' @importFrom labelled remove_labels
 #' @importFrom dplyr filter n_distinct count distinct %>%
 #' @importFrom rlang abort warn .data
 #'
-#' @return A data frame with model specifications in simplified form (y_var=Y, independent=>X), estimate of the regression coefficient if any, and model fit indices if any.
-#' @examples 
-#' obj <- create_infoframe(df=ex_survey1, 
-#'                         y_var=grep("^[abdefgp]_", names(ex_survey1), value=TRUE),
-#'                         x_var=grep("^x", names(ex_survey1), value=TRUE),
-#'                         ordinal_var=grep("^[abdegp]_", names(ex_survey1), value=TRUE),
-#'                         nominal_var=c("x1_sex", "x2_human", "f_uni"),
-#'                         add_x_univariates=TRUE,
-#'                         add_y_univariates=TRUE)
-#' #obj <- add_analyses(obj)
-add_analyses <- 
+#' @return A data frame with model specifications in simplified form (y_var=Y,
+#'   independent=>X), estimate of the regression coefficient if any, and model
+#'   fit indices if any.
+#' @export
+#' @examples
+#' #ex_survey1_inf_new <- add_analysis(ex_survey1_inf)
+add_analysis <- 
 	function(obj,
 			 cluster = NA,
 			 engine=c("mplus", "lavaan", "lm"), estimator=c("wlsmv", "mlr", NA), 
 			 ignore_x_type=FALSE, ignore_dummy01=FALSE, warn_low_n=FALSE,
+			 adjust_dummy01=TRUE,
 			 remove_text_var = TRUE, remove_empty_y_var=TRUE, 
 			 drop_duplicates=TRUE, path=tempdir()) {
 
 
 		
 	# Early fail.
-	{
-		assert_valid_infoframe(obj)
-		engine <- rlang::arg_match(engine)
-		estimator <- rlang::arg_match(estimator)
+	obj <- assert_valid_infoframe(obj)
+	engine <- rlang::arg_match(engine)
+	estimator <- rlang::arg_match(estimator)
 		
 	engine_options <- c("mplus", "lavaan", "lm") # Needed?
 	estimator_options <- c("wlsmv", "mlr")
 	type_options <- c("nominal", "ordinal", "interval")
-	cluster_options <- c(colnames(df), NA_character_)
+	cluster_options <- c(colnames(obj$df), NA_character_)
 	added_parts <- c()
 
 	design_frame <- obj$design_frame
@@ -68,13 +67,13 @@ add_analyses <-
 			dplyr::filter(.data$y_type != "text", .data$x_type != "text")
 	} else if(design_frame %>% 
 			  dplyr::filter(.data$y_type == "text", .data$x_type == "text") %>% 
-			  nrow() >0L) {
+			  nrow() > 0L) {
 		rlang::abort("Found character-variables. Please drop these or set remove_text_var=TRUE.")
 	}
 
 	empty_y_var <- 
 		design_frame[["y_var"]] %>% 
-		purrr::map_lgl(FUN = function(x) length(x)==0)
+		purrr::map_lgl(.f = ~length(.x)==0)
 	if(!remove_empty_y_var && any(empty_y_var)) {
 		rlang::abort("Seems there are empty 'y_var' entries. Please remove these first using:
 					 `my_design_frame %>% filter(pull(y_var) %>% lapply(length) %>% unlist()>0)`")
@@ -101,6 +100,7 @@ add_analyses <-
 		design_frame[["x_ref_cat"]] <- NA_character_
 		added_parts <- c(added_parts, "x_ref_cat")
 	}
+	
 	design_frame %>%
 		dplyr::distinct(.data$x_var, .data$x_type) %>%
 		dplyr::filter(!is.na(.data$x_var)) %>%
@@ -114,7 +114,7 @@ add_analyses <-
 					rlang::abort(c(paste0("For x_var=='", x_var, "', x_type is '", x_type, "' and there are over 2 categories."),
 									i="Consider `prep_data()` to automatically generate dummy variables.",
 									i="Set `ignore_x_type=TRUE` to omit this check."))
-				} else if(!ignore_dummy01 &&
+				} else if(!ignore_dummy01 && !adjust_dummy01 &&
 						  dplyr::n_distinct(df[[x_var]], na.rm = T)==2L &&
 						  min(df[[x_var]], na.rm = T) > 0L) {
 					rlang::abort(c(paste0("For x_var=='", x_var, "', x_type is '", x_type, "' and there are 2 categories where lowest value is above 0."),
@@ -140,17 +140,15 @@ add_analyses <-
 	# Return warnings
 	if(length(added_parts)>0L) rlang::warn(paste0("Added parts that were missing in design_frame: ", paste0(added_parts, collapse=",")))
 
-	}
 	progress_installed <- requireNamespace("progress", quietly = TRUE)
 	if(progress_installed) pb <- progress::progress_bar$new(format = "[:bar] :current/:total (:percent)", total = nrow(design_frame))
 	if(progress_installed) pb$tick(0)
 
-	design_frame$progress_installed <- progress_installed
 	design_frame <-
 		cbind(design_frame, 
 			  purrr::pmap_dfr(.l = design_frame, .f = function(...) {
 			  	if(progress_installed) pb$tick()
-			  	run_single_analysis(...)
+			  	run_single_analysis(df=df, adjust_dummy01=adjust_dummy01, ...)
 			  }))
 	
 	list(df=obj$df, var_frame=obj$var_frame, design_frame=design_frame)
@@ -179,6 +177,7 @@ add_analyses <-
 #'     distributed dependent variables. Robust Maximum Likelihood (mlr) is 
 #'     appropriate if the missing data is missing at random, e.g. can be 
 #'     explained by the available variables in the model.
+#' @param adjust_dummy01 Whether to fix dummies with lowest category above 0.
 #' @importFrom purrr map_lgl
 #' @importFrom tidyr pivot_wider
 #' @import dplyr
@@ -189,12 +188,11 @@ add_analyses <-
 #' @return Single row data frame.
 #'
 #' @examples
-run_single_analysis <- function(df, 
+run_single_analysis <- function(df, adjust_dummy01,
 	y_var, y_group, y_type=c("interval", "nominal", "ordinal"),
 	x_var, x_group, x_type=c("interval", "nominal", "ordinal"), x_ref_cat,
 	cluster, engine=c("mplus", "lavaan", "lm"), 
-	estimator = c("wlsmv", "mlr", NA), 
-	...) {
+	estimator = c("wlsmv", "mlr", NA), ...) {
 
 	y_type <- rlang::arg_match(y_type)
 	x_type <- rlang::arg_match(x_type)
@@ -205,20 +203,6 @@ run_single_analysis <- function(df,
 	
 	
 	# Move all these checks to global scope
-	y_var_unavail <- y_var[!y_var %in% colnames(df)]
-	if(length(y_var_unavail)>0L) {
-		rlang::abort(message = paste0("Following y_var not found in df", paste0(y_var_unavail, collapse=",")))
-	}
-	
-	problem_singular <- 
-		dplyr::select(df, dplyr::all_of(y_var)) %>%
-		dplyr::select(dplyr::all_of(colnames(.)[purrr::map_lgl(.x = ., .f = ~all(is.na(.x)))])) %>%
-		colnames()
-	if(length(problem_singular)>0L) {
-		rlang::warn(paste0("There is only NA in ", paste0(problem_singular, collapse=","), ". Will skip it."))
-		return()
-	}
-	
 	if(length(cluster)>1L) {
 		rlang::abort(message = c("Max 1 `cluster` is allowed. Problem with ", rlang::expr_text(cluster)))
 	}
@@ -228,10 +212,12 @@ run_single_analysis <- function(df,
 	
 	# Slim down df temporarily
 	needed_vars <- c(y_var, if(all(!is.null(x_var) && !is.na(x_var))) x_var, if(!is.na(cluster)) cluster)
+	print(df)
 	df <- df[, needed_vars]
 	
 	### Generate dummy variables
-	if(x_type %in% c("ordinal", "nominal") & dplyr::n_distinct(df[[x_var]], na.rm = T)>2L) {
+	if(x_type %in% c("ordinal", "nominal") & 
+	   dplyr::n_distinct(df[[x_var]], na.rm = TRUE) > 2L) {
 		if(is.null(x_ref_cat) || is.na(x_ref_cat)) x_ref_cat <-
 				dplyr::count(df, .data[[x_var]]) %>%
 				dplyr::arrange(dplyr::desc(n)) %>%
@@ -247,6 +233,13 @@ run_single_analysis <- function(df,
 		
 		x_var <- grep(pattern = paste0("__", x_var), x = names(df), value = T)
 		
+	}
+	if(adjust_dummy01 & 
+	   x_type %in% c("ordinal", "nominal") & 
+	   dplyr::n_distinct(df[[x_var]], na.rm=TRUE) == 2L &
+	   min(df[[x_var]], na.rm = TRUE)>0L) {
+		min_x_val <- min(df[[x_var]], na.rm = TRUE)
+		df[[x_var]] <- df[[x_var]] - min_x_val
 	}
 	
 	if(engine=="mplus") {

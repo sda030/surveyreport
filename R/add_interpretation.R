@@ -36,10 +36,10 @@
 #' @export
 #'
 #' @examples
-#' #obj <- add_text(obj=obj)
-#' #obj$design_frame[, grepl("interpret_", names(obj$design_frame))]
+#' ex_survey1_inf_new <- add_interpretation(ex_survey1_inf)
+#' ex_survey1_inf_new$design_frame[, grepl("interpret_", names(obj$design_frame))]
 #' 
-add_text <- function(obj, 
+add_interpretation <- function(obj, 
 					 template_xlsx=NULL, 
 					 first_mention=c("high_p", "low_p", "high_n", "small_n", "high_cat", "small_cat", "str_first_cat"),
 					 seed = 1,

@@ -6,7 +6,8 @@
 \usage{
 subset_vector(
   vec,
-  set = c("top", "upper", "mid_upper", "lower", "mid_lower", "bottom")
+  set = c("top", "upper", "mid_upper", "lower", "mid_lower", "bottom", "maximize"),
+  maximize_n = NULL
 )
 }
 \arguments{

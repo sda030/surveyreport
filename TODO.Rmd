@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 # Overall design
-
+- add_barchart1, add_barchart1_caption, add_table1, add_table1_caption, etc. Allows user to specify order in reporter(). reporter will then basically just add whatever is available in a row.
 -   Each of the add\_\* functions should call an underlying hidden function that generates the specified output for a single case, and the add\_\* function will loop across all rows in the design frame with purrr::pmap() and attach the output using a standard helper function. Then an autoreport-function could do looping itself by only calling underlying functions
 -   S3 class-based objects, or just lists for now? input/output as list of df, var_frame and design_frame. Single input, single output.
 -   Avoid :: by @importFrom pkg fun to save evaluation time
@@ -135,7 +135,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # utils
 
-## check_options
+## assert_options
+- Takes obj, not design_frame?
 
 # print2.rdocx
 -   replace utils::zip with officer::unpack_file

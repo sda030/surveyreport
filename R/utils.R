@@ -26,9 +26,23 @@ assert_valid_infoframe <- function(obj) {
 	}
 	X <- unique(unlist(obj$var_frame$var))[!unique(unlist(obj$var_frame$var)) %in% names(obj$df)]
 	if(length(X) > 0L) {
-		rlang::abort(c("Inconsistent variable names:", 
+		rlang::abort(c("Unavailable variables:", 
 					   i = "Each entry in `obj$var_frame$var` should exist in `obj$df`.",
 					   x = "Following variables were not found in `df`: ", 
+					   rlang::quo_text(X)))
+	}
+	X <- unique(unlist(obj$design_frame$y_var))[!unique(unlist(obj$design_frame$y_var)) %in% names(obj$df)]
+	if(length(X) > 0L) {
+		rlang::abort(c("Unavailable variables:", 
+					   i = "Each entry in `obj$design_frame$y_var` should exist in `obj$df`.",
+					   x = "Following variables were not found in `obj$df`: ", 
+					   rlang::quo_text(X)))
+	}
+	X <- unique(unlist(obj$design_frame$x_var))[!unique(unlist(obj$design_frame$x_var)) %in% c(names(obj$df), NA_character_)]
+	if(length(X) > 0L) {
+		rlang::abort(c("Unavailable variables:", 
+					   i = "Each entry in `obj$design_frame$x_var` should exist in `obj$df`.",
+					   x = "Following variables were not found in `obj$df`: ", 
 					   rlang::quo_text(X)))
 	}
 	if(nrow(obj$design_frame)==0L) {
@@ -36,6 +50,35 @@ assert_valid_infoframe <- function(obj) {
 					 i = "design_frame must contain at least one row.",
 					 x = "design_frame contains 0 zeros."))
 	}
+	if(is.null(obj$design_frame[["y_var"]])) {
+		rlang::abort(c("design_frame must have at least a 'y_var' variable.",
+					 x="design_frame$y_var is not found. Consider rerunning create_infoframe()?"))
+	}
+	
+	empty_y_var <- obj$design_frame[["y_var"]] %>% purrr::map_lgl(.f = ~{length(.)==0L})
+	if(any(empty_y_var)) {
+		rlang::abort(c("Empty 'y_var' entries found in design_frame:",
+					 i="Please remove these using: `my_design_frame %>% filter(pull(y_var) %>% lapply(length) %>% unlist()>0)`.",
+					 x="Problems with", 
+					 rlang::quo_text(obj$design_frame[["y_var"]][empty_y_var])))
+	}
+	# problem_singular <- 
+	# 	obj$df %>%
+	# 	dplyr::select(dplyr::all_of(.env$y_var)) %>%
+	# 	dplyr::select(dplyr::all_of(names(.)[purrr::map_lgl(., .f = ~all(is.na(.x)))])) %>%
+	# 	names()
+	# if(length(problem_singular)>0L) {
+	# 	rlang::warn(c("There is only NA in ", rlang::quo_text(problem_singular), ". Will skip."))
+	# 	return()
+	# }
+	# if(any(is.na(y_colour_set)) || !all(is_colour(y_colour_set))) {
+	# 	rlang::warn("No valid colours provided in ", 
+	# 				rlang::quo_text(y_colour_set), ". Using default.") # SHOULD THIS NOT ALREADY SET THESE COLOURS??
+	# }
+	# 
+	obj
+	## SHould test that there is not all missing y_var in design_frame
+	
 }
 
 
@@ -55,7 +98,8 @@ assert_valid_infoframe <- function(obj) {
 #' subset_vector(vec=1:7, set="mid_lower")
 
 subset_vector <- function(vec, set=c("top", "upper", "mid_upper", 
-									 "lower", "mid_lower", "bottom")) {
+									 "lower", "mid_lower", "bottom", "maximize"), 
+						  maximize_n=NULL) {
 	set <- rlang::arg_match(set)
 	n <- length(vec)
 	if(n %in% 0:1) {
@@ -64,14 +108,14 @@ subset_vector <- function(vec, set=c("top", "upper", "mid_upper",
 		vec[n]
 	} else if(set=="bottom") {
 		vec[1]
-	} else if(n %% 2 == 0L) {
+	} else if(n %% 2 == 0L & set!="maximize") {
 		if(set %in% c("mid_upper", "upper")) {
 			vec[(n/2+1):n]
 		} else if(set %in% c("mid_lower", "lower")) {
 			vec[1:(n/2)]
 		}
 	} else {
-		m <- median(vec)
+		m <- median(seq_len(n))
 		if(set=="upper") {
 			vec[(m+1):n]
 		} else if(set=="lower") {
@@ -80,6 +124,47 @@ subset_vector <- function(vec, set=c("top", "upper", "mid_upper",
 			vec[m:n]
 		} else if(set=="mid_lower") {
 			vec[1:m]
+		} else if(set=="maximize") {
+			if(n == maximize_n) {
+				vec
+			} else {
+				max_set <- c()
+				if(n %% 2 != 0L) {
+					if(maximize_n == 1L) {
+						m
+					}
+					if(maximize_n %% 2 != 0L) {
+						max_set <- c(max_set, m)
+					}
+					if(maximize_n > 1L) {
+						max_set <- c(max_set, 1L, n)
+					}
+					if(maximize_n > 4L) {
+						max_set <- c(max_set, 2L, n-1L)
+					}
+					if(maximize_n > 5L | maximize_n == 4) {
+						max_set <- c(max_set, 3L, n-2L)
+					}
+					if(maximize_n > 6L) {
+						max_set <- c(max_set, 4L, n-3L)
+					}
+				} else if(n %% 2L == 0L) {
+					if(maximize_n > 1L) {
+						max_set <- c(max_set, 1L, n)
+					}
+					if(maximize_n > 3L & n <= 6) {
+						max_set <- c(max_set, 2L, n-1L)
+					}
+					if(maximize_n > 4L | (maximize_n>3L & n > 6)) {
+						max_set <- c(max_set, 3L, n-2L)
+					}
+					if(maximize_n %% 2 != 0L) {
+						m <- round(median(seq_len(n)))
+						max_set <- c(max_set, m)
+					}
+				}
+				vec[sort(max_set)]
+			}
 		}
 	}
 }
@@ -257,4 +342,134 @@ check_options <- function(df, df_var, global_default, options) {
 		}
 	}
 	df
+}
+
+
+#' Are All Colours in Vector Valid Colours
+#' 
+#' As title says. From: http://stackoverflow.com/a/13290832/3315962
+#' 
+#' @param x Character vector of colours in hex-format.
+#'
+#' @return Logical, or error.
+#' @export
+#'
+#' @examples
+#' is_colour(c("#ff00ff", "#010101"))
+is_colour <- function(x) {
+	sapply(x, function(X) { # Avoid sapply
+		tryCatch(is.matrix(col2rgb(X)),
+				 error = function(e) FALSE)
+	})
+}
+
+#' Identify Suitable Font Given Background Hex Colour
+#' 
+#' Code is taken from XXX.
+#' 
+#' @param hex_code Colour in hex-format.
+#'
+#' @return Colours in hex-format, either black or white.
+#' @importFrom grDevices col2rgb
+#' @export
+#'
+#' @examples
+#' hex_bw("#0dadfd")
+hex_bw <- function(hex_code) {
+	
+	myrgb <- as.integer(col2rgb(hex_code))
+	
+	rgb_conv <- lapply(myrgb, function(x) {
+		i <- x / 255
+		if (i <= 0.03928) i / 12.92 else ((i + 0.055) / 1.055) ^ 2.4
+	})
+	rgb_calc <- (0.2126*rgb_conv[[1]]) + (0.7152*rgb_conv[[2]]) + (0.0722*rgb_conv[[3]])
+	
+	if (rgb_calc > 0.179) return("#000000") else return("#ffffff")
+	
+}
+
+#' Provide A Colour Set for A Number of Requested Colours
+#' 
+#' Possibly using user_colour_set if available. If not sufficient, uses a set
+#'     palette from RColorBrewer.
+#'
+#' @param n_colours_needed Number of colours needed.
+#' @param user_colour_set User-supplied default palette.
+#' @importFrom RColorBrewer brewer.pal.info brewer.pal
+#' @importFrom stats median
+#' @return A colour set as character vector.
+#' @export
+#' @examples
+#' get_colour_set(n_colours_needed=4)
+# get_colour_set <- function(n_colours_needed, user_colour_set=NULL) {
+# 	
+# 	if(!is.null(user_colour_set) &&
+# 	   length(user_colour_set) >= n_colours_needed &&
+# 	   all(is_colour(user_colour_set))) {
+# 		if(length(user_colour_set)==7L) {
+# 			
+# 			x <- 1:length(user_colour_set)
+# 			if(n_colours_needed==7L) return(user_colour_set)
+# 			if(n_colours_needed==6L) return(user_colour_set[c(1:3, 5:length(x))])
+# 			if(n_colours_needed==5L) return(user_colour_set[c(1:2, stats::median(x), 6:length(x))])
+# 			if(n_colours_needed==4L) return(user_colour_set[c(1,3, 5,length(x))])
+# 			if(n_colours_needed==3L) return(user_colour_set[c(1, stats::median(x),length(x))])
+# 			if(n_colours_needed==2L) return(user_colour_set[c(1, length(x))])
+# 		} else return(user_colour_set[1:n_colours_needed])
+# 	} else {
+# 		set.seed(1)
+# 		colour_map <- RColorBrewer::brewer.pal.info
+# 		qual_col_pals <- colour_map[colour_map$category == 'qual' & colour_map$colorblind,]
+# 		out <- mapply(RColorBrewer::brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals))
+# 		sample(unlist(out), n_colours_needed)
+# 	}
+# }
+get_colour_set <- function(n_colours_needed, user_colour_set=NULL, seed=1) {
+	
+	if(!is.null(user_colour_set) &&
+	   length(user_colour_set) >= n_colours_needed &&
+	   all(is_colour(user_colour_set))) {
+			x <- 1:length(user_colour_set)
+			subset_vector(vec = user_colour_set, set = "maximize", maximize_n = n_colours_needed)
+	} else if(n_colours_needed <= 12) {
+		set.seed(seed)
+		sample(x = RColorBrewer::brewer.pal(n = 12, name = "Paired"), size = n_colours_needed)
+	}
+}
+
+
+#' Get Colour Palette
+#' 
+#' Give two 
+#'
+#' @param type Character vector of variable types ("ordinal", "nominal", "interval")
+#' @param n_unique Number of unique values
+#'
+#' @return A character vector of hex colours.
+#' @importFrom rlang abort
+#' @importFrom vctrs vec_assert
+#' @importFrom purrr map2
+#' @export
+#'
+#' @examples
+colour_picker <- function(type, n_unique, colour_set_ordinal, colour_set_nominal) {
+	vctrs::vec_assert(x = type, ptype = character())
+	vctrs::vec_assert(x = n_unique, ptype = integer())
+	if(length(type) != length(n_unique)) {
+		rlang::abort(c("type and n_unique are not of equal length.",
+					   x=paste0("type is of length ", length(type), " whereas n_unique is of length ", length(n_unique))))
+	}
+	
+	purrr::map2(.x = type, .y = n_unique, 
+				function(type_i, n_unique_i) {
+					
+					if(type_i %in% c("ordinal", "interval")) {
+						get_colour_set(n_colours_needed = n_unique_i, 
+									   user_colour_set = colour_set_ordinal)
+					} else if(type_i=="nominal" & n_unique_i <= 12) {
+						get_colour_set(n_colours_needed = n_unique_i, 
+									   user_colour_set = colour_set_nominal)
+					} else NA_character_
+				})
 }

@@ -71,15 +71,15 @@
 #'
 #' @examples
 #' data("ex_survey1")
-#' obj <- create_infoframe(df=ex_survey1, 
-#'                         y_var=grep("^[abdefgp]_", names(ex_survey1), value=TRUE),
-#'                         x_var=grep("^x", names(ex_survey1), value=TRUE),
-#'                         ordinal_var=grep("^[abdegp]_", names(ex_survey1), value=TRUE),
-#'                         nominal_var=c("x1_sex", "x2_human", "f_uni"),
-#'                         add_x_univariates=TRUE,
-#'                         add_y_univariates=TRUE)
-#' #obj$var_frame
-#' #obj$design_frame
+# ex_survey1_inf <-
+#' create_infoframe(df=ex_survey1,
+#' 				 y_var=grep("^[abcdefgp]_", names(ex_survey1), value=TRUE),
+#' 				 x_var=grep("^x[12]_", names(ex_survey1), value=TRUE),
+#' 				 ordinal_var=grep("^[abdegp]_", names(ex_survey1), value=TRUE),
+#' 				 nominal_var=c("x1_sex", "x2_human", "f_uni"),
+#' 				 add_constructs = FALSE,
+#' 				 add_x_univariates=FALSE,
+#' 				 add_y_univariates=FALSE)
 
 create_infoframe <-
 	function(df,
@@ -103,6 +103,11 @@ create_infoframe <-
 			 					   blue="#2D8E9F",
 			 					   purple="#DBD2E0")) {
 
+		
+		# Last helpful checks
+		if(is.null(y_var)) rlang::warn("No y_var provided. This makes design_frame useless.")
+		if(is.null(y_var)) rlang::inform("No x_var provided. Is this as intended?")
+		
 
 		type_checker <- function(var, data=df) {
 			purrr::map_chr(var, function(v) {
@@ -115,11 +120,12 @@ create_infoframe <-
 								 v %in% interval_var | (dplyr::n_distinct(data[[v]], na.rm = T) >= ordinal_if_fewer_than) ~ "interval")
 			})
 		}
-		colour_picker <- function(var) {
-			purrr::map(var, function(v) {
-				if(is.na(v)) NA_character_ else if(v=="ordinal") colour_set_ordinal else if(v=="nominal") colour_set_nominal else NA_character_
-				### NEED TO ADD INTERVAL
-			})}
+		uniques <- function(var, data=df) {
+			purrr::map_int(var, function(v) {
+				dplyr::n_distinct(data[[v]], na.rm = T)
+			})
+		}
+		
 		add_univariates <- function(data, e="y") {
 			dplyr::bind_rows(data,
 							 dplyr::filter(var_frame, .data$role==e) %>%
@@ -161,10 +167,13 @@ create_infoframe <-
 						  					  dplyr::if_else(.data$var %in% .env$x_var, "x", 
 						  					  			   dplyr::if_else(.data$var %in% .env$med_var, "m", NA_character_))),
 						  type = type_checker(var=.data$var),
-						  colour_set = colour_picker(var=.data$type)) %>%
+						  n_unique = uniques(var=.data$var),
+						  colour_set = colour_picker(type= .data$type, n_unique=.data$n_unique, 
+						  						   colour_set_ordinal=colour_set_ordinal, 
+						  						   colour_set_nominal=colour_set_nominal)) %>%
 			dplyr::arrange(.data$group, .data$group_label, .data$var, .data$label)
 		})
-
+		
 		## Error checking
 		n_group_label <- 
 			var_frame %>% 
@@ -228,6 +237,7 @@ create_infoframe <-
 			}) %>%
 			.[purrr::map_lgl(., .f = ~nrow(.)>0L)]
 
+
 		design_frame <-
 			tidyr::expand_grid(tmp[["y"]], tmp[["m"]], tmp[["x"]]) %>%
 			tidyr::unpack(cols = names(.env$tmp)) %>%
@@ -237,5 +247,5 @@ create_infoframe <-
 			unique()
 
 
-		list(df=df, var_frame=var_frame, design_frame=design_frame) #, call=as.list(arg_call)
+		list(df=df, var_frame=var_frame, design_frame=design_frame) 
 	}

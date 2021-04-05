@@ -1,5 +1,3 @@
-
-
 #' Add percentages to design frame, with various options, for later processing.
 #'
 #' @param df The data. Extract with myObj[["df"]]
@@ -24,9 +22,9 @@
 #' @export 
 #'
 #' @examples
-#' # add_percentages(obj)
+#' ex_survey1_inf_new <- add_percentage(ex_survey1_inf)
 
-add_percentages <- function(df, design_frame, set="upper", percent=TRUE, round_digits=0) {
+add_percentage <- function(df, design_frame, set="upper", percent=TRUE, round_digits=0) {
 	
 	set_options <- c("top", "upper", "mid_upper", "lower", "mid_lower", "bottom")
 	if(!(!is.null(set) && length(set)==1L && set %in% set_options)) rlang::abort(c("set must be one of"), rlang::expr_text(set_options))
