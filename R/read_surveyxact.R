@@ -8,13 +8,16 @@
 #' @param filepath A character string with a path to an Excel file, or a character vector with paths to the dataset.csv, structure.csv and labels.csv-files.
 #' @param remove_whitespace Logical, default is FALSE. Whether to remove 
 #'     leading and ending whitespace from all files.
+#' @param col_select unquoted columns to be selected. Takes tidyselect syntax.
 #'
-#' @return data.frame
+#' @return tibble
 #' @importFrom purrr map reduce 
 #' @importFrom rlang abort set_names .data inform warn
 #' @importFrom readxl excel_sheets read_excel
 #' @importFrom utils read.delim
 #' @importFrom labelled set_variable_labels set_value_labels val_labels
+#' @importFrom dplyr tibble select enquo
+#' @importFrom tidyselect eval_select
 #' @export
 #'
 #' @examples
@@ -36,7 +39,7 @@ read_surveyxact <-
 	function(filepath=c(dataset="dataset.csv",
 						structure ="structure.csv",
 						labels="labels.csv"),
-			 remove_whitespace=FALSE) {
+			 remove_whitespace=FALSE, col_select=NULL) {
 		
 		vctrs::vec_assert(x = filepath, ptype = character())
 		if(length(filepath)==1L && grepl(".xlsx", filepath)) {
@@ -119,9 +122,6 @@ read_surveyxact <-
 		df_vars[["questionText"]] <- trimws(x = df_vars[["questionText"]])
 		df_vars[["choiceText"]] <- trimws(x = df_vars[["choiceText"]])
 		df_labels[["valueLabel"]] <- trimws(x = df_labels[["valueLabel"]])
-		# df_vars[["questionText"]] <- gsub("\n$|[[:space:]]*$|^[[:space:]]*", "", df_vars[["questionText"]])
-		# df_vars[["choiceText"]] <- gsub("\n$|[[:space:]]*$|^[[:space:]]*", "", df_vars[["choiceText"]])
-		# df_labels[["valueLabel"]] <- gsub("\n$|[[:space:]]*$|^[[:space:]]*", "", df_labels[["valueLabel"]])
 		
 		df_vars[["questionText"]] <- ifelse(test = df_vars[["subType"]] == "Multiple",
 											yes = paste(df_vars[["questionText"]], df_vars[["choiceText"]], sep=" - "), 
@@ -135,85 +135,24 @@ read_surveyxact <-
 		})
 
 		df_data <- labelled::set_variable_labels(df_data, .labels = df_vars, .strict = FALSE)
+		
+
+		
 		unmatched <- c()
 		for(i in names(df_labels)) {
-			if(!is.null(df_data[,i])) {
+			if(i %in% colnames(df_data)) {
 				labelled::val_labels(df_data[,i]) <- df_labels[[i]]
 			} else unmatched <- c(unmatched, i)
 		}
 		if(length(unmatched)>0L) rlang::warn(c(x="Unable to find following Labels-variables in Dataset-variables:",
 											   rlang::expr_text(unmatched)))
-		# df_data <- labelled::set_value_labels(df_data, .labels = df_labels, .strict = FALSE)
-		df_data
+
+		col_select <- rlang::enquo(col_select)
+		if(!rlang::quo_is_null(col_select)) {
+			pos <- tidyselect::eval_select(col_select, df_data)
+			df_data <- rlang::set_names(df_data[pos], names(pos))
+		}
+		dplyr::as_tibble(df_data)
 	}
 
 
-
-# create_df_from_surveyxact <- # Old version
-# 	function(filepath=c(dataset="dataset.csv",
-# 						structure ="structure.csv",
-# 						labels="labels.csv"),
-# 			 variableName="variableName",
-# 			 variableLabel="questionText",
-# 			 variableType="subType",
-# 			 variableQuestion="variableQuestion",
-# 			 variableGroup="variableGroup",
-# 			 variableChoiceText = "choiceText",
-# 			 value="value",
-# 			 valueLabel="valueLabel",
-# 			 valueType="valueType",
-# 			 fixStupidSXbug=TRUE, rawAsList=FALSE) {
-# 
-# 		filepath <- unlist(filepath)
-# 		if(length(filepath)==1L && grepl(".xlsx", filepath)) {
-# 			df_data <-
-# 				grep("Dataset\\(*1*\\)*.*", readxl::excel_sheets(filepath), value = T) %>%
-# 				purrr::map(.f = ~readxl::read_excel(path = filepath, sheet=.x)) %>%
-# 				purrr::reduce(cbind) %>%
-# 				as.data.frame()
-# 
-# 			df_vars <-  readxl::read_excel(path = filepath, sheet="Structure")
-# 			df_vars <- as.data.frame(df_vars)
-# 			df_labels <- suppressMessages(readxl::read_excel(path = filepath, sheet="Labels", col_names = !fixStupidSXbug))
-# 			df_labels <- as.data.frame(df_labels)
-# 			colnames(df_labels) <- c(variableName, value, valueLabel)
-# 		} else if(length(filepath)==3L && all(grepl(".csv", filepath))) {
-# 			df_data <- read.csv2(file = filepath[names(filepath)=="dataset"], row.names = F, stringsAsFactors = F)
-# 			df_vars <- read.csv2(file = filepath[names(filepath)=="structure"], row.names = F, stringsAsFactors = F)
-# 			df_labels <- read.csv2(file = filepath[names(filepath)=="labels"], row.names = F, stringsAsFactors = F, header = !fixStupidSXbug, col.names = c(variableName, value, valueLabel))
-# 		} else stop("filepath must be either an xlsx-file or the three csv-files dataset.csv, structure.csv and labels.csv")
-# 
-# 
-# 		if(any(!c(variableName, variableLabel) %in% colnames(df_vars))) stop(paste0("Could not find columns ", paste0(c(variableName, variableLabel), collapse=", "), " in Structure"))
-# 		if(any(!c(variableName, value, valueLabel) %in% colnames(df_labels))) stop(paste0("Could not find columns ", paste0(c(variableName, value, valueLabel), collapse=", "), " in Labels", collapse=", "))
-# 
-# 		# Deler opp variableLabel => variableGroup og variableQuestion
-# 		df_vars[[variableGroup]] <- gsub("(.*) - .*", "\\1", df_vars[[variableLabel]])
-# 		df_vars[[variableQuestion]] <- gsub(".* - (.*)", "\\1", df_vars[[variableLabel]])
-# 		df_vars$questionName <- NULL
-# 		df_vars[[variableGroup]] <- gsub("\n$", "", df_vars[[variableGroup]])
-# 		df_vars[[variableQuestion]] <- gsub("\n$", "", df_vars[[variableQuestion]])
-# 		df_vars[[variableLabel]] <- gsub("\n$", "", df_vars[[variableLabel]])
-# 		df_vars[[variableChoiceText]] <- gsub("\n$", "", df_vars[[variableChoiceText]])
-# 		df_labels[[valueLabel]] <- gsub("\n$", "", df_labels[[valueLabel]])
-# 		df_vars[[variableLabel]] <- ifelse(df_vars[[variableType]] == "Multiple",
-# 										   paste(df_vars[[variableLabel]], df_vars[[variableChoiceText]],sep=" - "), df_vars[[variableLabel]])
-# 
-# 
-# 		if(rawAsList) {
-# 			return(list(structure=df_vars, dataset=df_data, labels=df_labels))
-# 		} else {
-# 			df_vars <-
-# 				df_vars %>%
-# 				dplyr::select(variableName, questionText) %>%
-# 				tibble::deframe() %>%
-# 				as.list()
-# 			df_labels <-
-# 				plyr::dlply(.variables = "variableName",
-# 							.fun = function(df) tibble::deframe(df[,c("valueLabel","value")]))
-# 			df_data %>%
-# 				labelled::set_variable_labels(.labels = df_vars) %>%
-# 				labelled::set_value_labels(.labels = df_labels) %>%
-# 				return()
-# 		}
-# 	}

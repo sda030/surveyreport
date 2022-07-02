@@ -27,7 +27,8 @@ ex_survey1 <-
 		dplyr::across(dplyr::all_of(paste0("p_", 1:4)), 
 					  ~labelled::labelled(sample(x=0:3, replace = T, size = 100, prob = c(.2,.2,.2,.4)),
 					  					labels = rlang::set_names(0:3, c("Strongly disagree", "Somewhat disagree", "Somewhat agree", "Strongly agree")))),
-		f_uni=sample(x=paste0("University of ", LETTERS[1:5]), replace = T, size = 100))
+		f_uni=sample(x=paste0("University of ", LETTERS[1:5]), replace = T, size = 100),
+		resp_status = sample(x=1:6, replace=TRUE, size=100, prob = c(.01, .1, .15, .7, .03, .01)))
 
 labelled::var_label(ex_survey1) <- c(
 	"Gender", 
@@ -38,7 +39,8 @@ labelled::var_label(ex_survey1) <- c(
 	paste0("Rate your degree of confidence doing the following - ", c("Driving", "Drinking", "Driving", "Dancing")),
 	paste0("How often do you do the following? - ", c("Eat", "Eavesdrop", "Exercise", "Encourage someone whom you have only recently met and who struggles with simple tasks that they cannot achieve by themselves")),
 	paste0("To what extent do you agree or disagree to the following policies - ", c("Red", "Green", "Yellow", "Blue"), " Party"),
-	paste0("Which of the following universities would you prefer to study at?"))
+	paste0("Which of the following universities would you prefer to study at?"),
+	"Response status (1=Not sent out, 2=Unopened, 3=Some responses, 4=Completed, 5=Excused, 6=Not serious)")
 
 usethis::use_data(ex_survey1, overwrite = TRUE)
 

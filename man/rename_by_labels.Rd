@@ -28,7 +28,8 @@ Data with renamed variable names.
 }
 \description{
 Occasionally dataframe columns have not been named logically and consistent in the 
-software where the data originates. This function renames
+software where the data originates. This function renames variable names
+based on patterns in the variable labels, after ignoring some stop words.
 }
 \examples{
 rename_by_labels(ex_survey1)

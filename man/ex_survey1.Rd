@@ -41,6 +41,7 @@ A data frame with 100 rows and 29 variables:
   following policies - Blue Party}
   \item{f_uni}{Which of the following universities would you 
   prefer to study at?}
+  \item{resp_status}{Response status}
 }
 }
 \usage{

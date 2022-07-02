@@ -10,6 +10,8 @@ get_colour_set(n_colours_needed, user_colour_set = NULL, seed = 1)
 \item{n_colours_needed}{Number of colours needed.}
 
 \item{user_colour_set}{User-supplied default palette.}
+
+\item{seed}{Random seed for sampling.}
 }
 \value{
 A colour set as character vector.

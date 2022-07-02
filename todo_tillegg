@@ -1,0 +1,7 @@
+## surveyreport returns data frame with items (rows) and diagnostics (columns)
+	Improvement over time (p1-p0)
+	IRT parameters (a, b, c), with low discriminators, and extremely hard/easy items flagged
+	Items with responses above/below 95/5 percentage flagged
+	Low CFA loadings
+	Loadings improved if item removed
+	

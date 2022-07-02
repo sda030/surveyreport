@@ -8,52 +8,75 @@
 A data frame with 100 rows and 29 variables: 
 \describe{
   \item{v_1_1}{Hvilke(t) valgfag hadde du på ungdomsskolen? (flere kryss er
-  mulig) - Design og redesign} \item{v_1_2}{Hvilke(t) valgfag hadde du på
+  mulig) - Design og redesign} 
+  \item{v_1_2}{Hvilke(t) valgfag hadde du på
   ungdomsskolen? (flere kryss er mulig) - Forskning i praksis}
   \item{v_1_3}{Hvilke(t) valgfag hadde du på ungdomsskolen? (flere kryss er
-  mulig) - Fysisk aktivitet og helse} \item{v_1_4}{Hvilke(t) valgfag hadde du
+  mulig) - Fysisk aktivitet og helse} 
+  \item{v_1_4}{Hvilke(t) valgfag hadde du
   på ungdomsskolen? (flere kryss er mulig) - Natur, miljø og friluftsliv}
   \item{v_1_5}{Hvilke(t) valgfag hadde du på ungdomsskolen? (flere kryss er
-  mulig) - Produksjon av varer og tjenester} \item{v_1_6}{Hvilke(t) valgfag
+  mulig) - Produksjon av varer og tjenester} 
+  \item{v_1_6}{Hvilke(t) valgfag
   hadde du på ungdomsskolen? (flere kryss er mulig) - Teknologi i praksis}
   \item{v_1_7}{Hvilke(t) valgfag hadde du på ungdomsskolen? (flere kryss er
-  mulig) - Demokrati i praksis} \item{v_1_8}{Hvilke(t) valgfag hadde du på
+  mulig) - Demokrati i praksis} 
+  \item{v_1_8}{Hvilke(t) valgfag hadde du på
   ungdomsskolen? (flere kryss er mulig) - Innsats for andre}
   \item{v_1_9}{Hvilke(t) valgfag hadde du på ungdomsskolen? (flere kryss er
-  mulig) - Internasjonalt samarbeid} \item{v_1_10}{Hvilke(t) valgfag hadde du
+  mulig) - Internasjonalt samarbeid} 
+  \item{v_1_10}{Hvilke(t) valgfag hadde du
   på ungdomsskolen? (flere kryss er mulig) - Levande kulturarv}
   \item{v_1_11}{Hvilke(t) valgfag hadde du på ungdomsskolen? (flere kryss er
-  mulig) - Medier og informasjon} \item{v_1_12}{Hvilke(t) valgfag hadde du på
-  ungdomsskolen? (flere kryss er mulig) - Reiseliv} \item{v_1_13}{Hvilke(t)
+  mulig) - Medier og informasjon} 
+  \item{v_1_12}{Hvilke(t) valgfag hadde du på
+  ungdomsskolen? (flere kryss er mulig) - Reiseliv} 
+  \item{v_1_13}{Hvilke(t)
   valgfag hadde du på ungdomsskolen? (flere kryss er mulig) - Sal og scene}
   \item{v_1_14}{Hvilke(t) valgfag hadde du på ungdomsskolen? (flere kryss er
-  mulig) - Programmering} \item{v_1_15}{Hvilke(t) valgfag hadde du på
-  ungdomsskolen? (flere kryss er mulig) - Trafikk} \item{v_1_16}{Hvilke(t)
+  mulig) - Programmering} 
+  \item{v_1_15}{Hvilke(t) valgfag hadde du på
+  ungdomsskolen? (flere kryss er mulig) - Trafikk} 
+  \item{v_1_16}{Hvilke(t)
   valgfag hadde du på ungdomsskolen? (flere kryss er mulig) - Annet,
-  hvilke(t):} \item{s_2}{Hvilket studieforberedende utdanningsprogram går du
-  på?} \item{s_4_1}{Hvilket programområde (linje) går du på? - Realfag (for
+  hvilke(t):} 
+  \item{s_2}{Hvilket studieforberedende utdanningsprogram går du
+  på?} 
+  \item{s_4_1}{Hvilket programområde (linje) går du på? - Realfag (for
   eksempel et eller flere av fagene: biologi, kjemi, fysikk, informatikk,
-  matematikk)} \item{s_4_2}{Hvilket programområde (linje) går du på? -
-  Språkfag, samfunnsfag og økonomi} \item{s_4_3}{Hvilket programområde
-  (linje) går du på? - Annet*:} \item{s_6}{Når bestemte du deg for
-  programområdet du har valgt?} \item{m_1}{Hvilket matematikkfag hadde du på
-  Vg1?} \item{s_11_1}{Hvilke fag har du valgt/skal du velge? (flere kryss er
-  mulig) - Matematikk (S, R)} \item{s_11_2}{Hvilke fag har du valgt/skal du
+  matematikk)} 
+  \item{s_4_2}{Hvilket programområde (linje) går du på? -
+  Språkfag, samfunnsfag og økonomi} 
+  \item{s_4_3}{Hvilket programområde
+  (linje) går du på? - Annet*:} 
+  \item{s_6}{Når bestemte du deg for
+  programområdet du har valgt?} 
+  \item{m_1}{Hvilket matematikkfag hadde du på
+  Vg1?} 
+  \item{s_11_1}{Hvilke fag har du valgt/skal du velge? (flere kryss er
+  mulig) - Matematikk (S, R)} 
+  \item{s_11_2}{Hvilke fag har du valgt/skal du
   velge? (flere kryss er mulig) - Biologi; Kjemi; Fysikk; Geofag}
   \item{s_11_3}{Hvilke fag har du valgt/skal du velge? (flere kryss er mulig)
-  - Informasjonsteknologi; Teknologi og forskningslære} \item{s_11_4}{Hvilke
+  - Informasjonsteknologi; Teknologi og forskningslære} 
+  \item{s_11_4}{Hvilke
   fag har du valgt/skal du velge? (flere kryss er mulig) - Språkfag (Engelsk;
-  Fremmedspråk; Latin; Gresk)} \item{s_11_5}{Hvilke fag har du valgt/skal du
+  Fremmedspråk; Latin; Gresk)} 
+  \item{s_11_5}{Hvilke fag har du valgt/skal du
   velge? (flere kryss er mulig) - Markedsføring og ledelse; Medie- og
-  informasjonskunnskap} \item{s_11_6}{Hvilke fag har du valgt/skal du velge?
+  informasjonskunnskap} 
+  \item{s_11_6}{Hvilke fag har du valgt/skal du velge?
   (flere kryss er mulig) - Samfunnsøkonomi; Rettslære; Psykologi}
   \item{s_11_7}{Hvilke fag har du valgt/skal du velge? (flere kryss er mulig)
-  - Økonomistyring; Økonomi og ledelse; Entreprenørskap} \item{s_11_8}{Hvilke
+  - Økonomistyring; Økonomi og ledelse; Entreprenørskap} 
+  \item{s_11_8}{Hvilke
   fag har du valgt/skal du velge? (flere kryss er mulig) - Sosialkunnskap;
   Samfunnsgeografi; Sosiologi og sosialantropologi; Politikk og
-  menneskerettigheter} \item{s_11_9}{Hvilke fag har du valgt/skal du velge?
+  menneskerettigheter} 
+  \item{s_11_9}{Hvilke fag har du valgt/skal du velge?
   (flere kryss er mulig) - Historie og filosofi; Antikkens kultur; Samisk
-  historie og kultur} \item{s_11_10}{Hvilke fag har du valgt/skal du velge?
+  historie og kultur} 
+  \item{s_11_10}{Hvilke fag har du valgt/skal du velge?
   (flere kryss er mulig) - Reiseliv og språkfag; Kommunikasjon og kultur}
   \item{p_01}{Kryss av for de programfagene du har valgt/skal velge (Kryss
   kun av på de fagene som er aktuelle for deg) - Matematikk R1}
@@ -68,52 +91,75 @@ A data frame with 100 rows and 29 variables:
   \item{p_06}{Kryss av for de programfagene du har valgt/skal velge (Kryss
   kun av på de fagene som er aktuelle for deg) - Programmering og modellering
   X} \item{p_07}{Kryss av for de programfagene du har valgt/skal velge (Kryss
-  kun av på de fagene som er aktuelle for deg) - Biologi 1} \item{p_08}{Kryss
+  kun av på de fagene som er aktuelle for deg) - Biologi 1} 
+  \item{p_08}{Kryss
   av for de programfagene du har valgt/skal velge (Kryss kun av på de fagene
-  som er aktuelle for deg) - Biologi 2} \item{p_09}{Kryss av for de
+  som er aktuelle for deg) - Biologi 2} 
+  \item{p_09}{Kryss av for de
   programfagene du har valgt/skal velge (Kryss kun av på de fagene som er
-  aktuelle for deg) - Fysikk 1} \item{p_10}{Kryss av for de programfagene du
+  aktuelle for deg) - Fysikk 1} 
+  \item{p_10}{Kryss av for de programfagene du
   har valgt/skal velge (Kryss kun av på de fagene som er aktuelle for deg) -
-  Fysikk 2} \item{p_11}{Kryss av for de programfagene du har valgt/skal velge
+  Fysikk 2} 
+  \item{p_11}{Kryss av for de programfagene du har valgt/skal velge
   (Kryss kun av på de fagene som er aktuelle for deg) - Geofag X}
   \item{p_12}{Kryss av for de programfagene du har valgt/skal velge (Kryss
-  kun av på de fagene som er aktuelle for deg) - Geofag 1} \item{p_13}{Kryss
+  kun av på de fagene som er aktuelle for deg) - Geofag 1} 
+  \item{p_13}{Kryss
   av for de programfagene du har valgt/skal velge (Kryss kun av på de fagene
-  som er aktuelle for deg) - Geofag 2} \item{p_14}{Kryss av for de
+  som er aktuelle for deg) - Geofag 2} 
+  \item{p_14}{Kryss av for de
   programfagene du har valgt/skal velge (Kryss kun av på de fagene som er
-  aktuelle for deg) - Informasjonsteknologi 1} \item{p_15}{Kryss av for de
+  aktuelle for deg) - Informasjonsteknologi 1} 
+  \item{p_15}{Kryss av for de
   programfagene du har valgt/skal velge (Kryss kun av på de fagene som er
-  aktuelle for deg) - Informasjonsteknologi 2} \item{p_16}{Kryss av for de
+  aktuelle for deg) - Informasjonsteknologi 2} 
+  \item{p_16}{Kryss av for de
   programfagene du har valgt/skal velge (Kryss kun av på de fagene som er
-  aktuelle for deg) - Kjemi 1} \item{p_17}{Kryss av for de programfagene du
+  aktuelle for deg) - Kjemi 1} 
+  \item{p_17}{Kryss av for de programfagene du
   har valgt/skal velge (Kryss kun av på de fagene som er aktuelle for deg) -
-  Kjemi 2} \item{p_18}{Kryss av for de programfagene du har valgt/skal velge
+  Kjemi 2} 
+  \item{p_18}{Kryss av for de programfagene du har valgt/skal velge
   (Kryss kun av på de fagene som er aktuelle for deg) - Teknologi og
-  forskningslære X} \item{p_19}{Kryss av for de programfagene du har
+  forskningslære X} 
+  \item{p_19}{Kryss av for de programfagene du har
   valgt/skal velge (Kryss kun av på de fagene som er aktuelle for deg) -
-  Teknologi og forskningslære 1} \item{p_20}{Kryss av for de programfagene du
+  Teknologi og forskningslære 1} 
+  \item{p_20}{Kryss av for de programfagene du
   har valgt/skal velge (Kryss kun av på de fagene som er aktuelle for deg) -
-  Teknologi og forskningslære 2} \item{p_21}{Kryss av for de programfagene du
+  Teknologi og forskningslære 2} 
+  \item{p_21}{Kryss av for de programfagene du
   har valgt/skal velge (Kryss kun av på de fagene som er aktuelle for deg) -
-  Antikkens kultur} \item{p_22}{Kryss av for de programfagene du har
+  Antikkens kultur} 
+  \item{p_22}{Kryss av for de programfagene du har
   valgt/skal velge (Kryss kun av på de fagene som er aktuelle for deg) -
-  Latin 1 eller gresk 1} \item{p_23}{Kryss av for de programfagene du har
+  Latin 1 eller gresk 1} 
+  \item{p_23}{Kryss av for de programfagene du har
   valgt/skal velge (Kryss kun av på de fagene som er aktuelle for deg) -
-  Latin 2 eller gresk 2} \item{p_24}{Kryss av for de programfagene du har
+  Latin 2 eller gresk 2} 
+  \item{p_24}{Kryss av for de programfagene du har
   valgt/skal velge (Kryss kun av på de fagene som er aktuelle for deg) -
-  Internasjonal engelsk} \item{p_25}{Kryss av for de programfagene du har
+  Internasjonal engelsk} 
+  \item{p_25}{Kryss av for de programfagene du har
   valgt/skal velge (Kryss kun av på de fagene som er aktuelle for deg) -
-  Samfunnsfaglig engelsk} \item{p_26}{Kryss av for de programfagene du har
+  Samfunnsfaglig engelsk} 
+  \item{p_26}{Kryss av for de programfagene du har
   valgt/skal velge (Kryss kun av på de fagene som er aktuelle for deg) -
-  Engelskspråklig litteratur og kultur} \item{p_27}{Kryss av for de
+  Engelskspråklig litteratur og kultur} 
+  \item{p_27}{Kryss av for de
   programfagene du har valgt/skal velge (Kryss kun av på de fagene som er
-  aktuelle for deg) - Engelsk 1} \item{p_28}{Kryss av for de programfagene du
+  aktuelle for deg) - Engelsk 1} 
+  \item{p_28}{Kryss av for de programfagene du
   har valgt/skal velge (Kryss kun av på de fagene som er aktuelle for deg) -
-  Engelsk 2} \item{p_29}{Kryss av for de programfagene du har valgt/skal
+  Engelsk 2} 
+  \item{p_29}{Kryss av for de programfagene du har valgt/skal
   velge (Kryss kun av på de fagene som er aktuelle for deg) - Entreprenørskap
-  og bedriftsutvikling 1} \item{p_30}{Kryss av for de programfagene du har
+  og bedriftsutvikling 1} 
+  \item{p_30}{Kryss av for de programfagene du har
   valgt/skal velge (Kryss kun av på de fagene som er aktuelle for deg) -
-  Entreprenørskap og bedriftsutvikling 2} \item{p_31}{Kryss av for de
+  Entreprenørskap og bedriftsutvikling 2} 
+  \item{p_31}{Kryss av for de
   programfagene du har valgt/skal velge (Kryss kun av på de fagene som er
   aktuelle for deg) - Fremmedspråk nivå I} \item{p_32}{Kryss av for de
   programfagene du har valgt/skal velge (Kryss kun av på de fagene som er

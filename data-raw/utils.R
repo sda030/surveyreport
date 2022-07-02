@@ -1,4 +1,87 @@
 
+#' Assert Infoframe As Valid Object
+#'
+#' Checks that an object is a valid infoframe object. Currently does not return
+#'     anything.
+#'
+#' @param obj An infoframe object as created by create_infoframe()
+
+#' @return Nothing.
+#' @examples assert_valid_infoframe(create_infoframe(ex_survey1))
+assert_valid_infoframe <- function(obj) {
+	if(!rlang::is_list(obj, n = 3L) ||
+	   !all(c("df", "var_frame", "design_frame") %in% names(obj)) ||
+	   !is.data.frame(obj[["df"]]) || 
+	   !is.data.frame(obj[["var_frame"]]) || 
+	   !is.data.frame(obj[["design_frame"]])) {
+
+		X <- paste0("`obj` is a ", class(obj)[[1]], " of length ", length(obj),
+					 " with elements of class \n", 
+					 rlang::quo_text(unname(purrr::map_chr(obj, ~class(.x)[[1]]))))
+		rlang::abort(c("Invalid `obj`:",
+					   i = "`obj` must be a list with three elements.",
+					   i = "The elements must be named `df`, `var_frame` and `design_frame`.",
+					   i = "Each element must consist of a data frame.",
+					   x = X))
+	}
+	X <- unique(unlist(obj$var_frame$var))[!unique(unlist(obj$var_frame$var)) %in% names(obj$df)]
+	if(length(X) > 0L) {
+		rlang::abort(c("Unavailable variables:", 
+					   i = "Each entry in `obj$var_frame$var` should exist in `obj$df`.",
+					   x = "Following variables were not found in `df`: ", 
+					   rlang::quo_text(X)))
+	}
+	X <- unique(unlist(obj$design_frame$y_var))[!unique(unlist(obj$design_frame$y_var)) %in% names(obj$df)]
+	if(length(X) > 0L) {
+		rlang::abort(c("Unavailable variables:", 
+					   i = "Each entry in `obj$design_frame$y_var` should exist in `obj$df`.",
+					   x = "Following variables were not found in `obj$df`: ", 
+					   rlang::quo_text(X)))
+	}
+	X <- unique(unlist(obj$design_frame$x_var))[!unique(unlist(obj$design_frame$x_var)) %in% c(names(obj$df), NA_character_)]
+	if(length(X) > 0L) {
+		rlang::abort(c("Unavailable variables:", 
+					   i = "Each entry in `obj$design_frame$x_var` should exist in `obj$df`.",
+					   x = "Following variables were not found in `obj$df`: ", 
+					   rlang::quo_text(X)))
+	}
+	if(nrow(obj$design_frame)==0L) {
+		rlang::abort(c("Empty design_frame:",
+					 i = "design_frame must contain at least one row.",
+					 x = "design_frame contains 0 zeros."))
+	}
+	if(is.null(obj$design_frame[["y_var"]])) {
+		rlang::abort(c("design_frame must have at least a 'y_var' variable.",
+					 x="design_frame$y_var is not found. Consider rerunning create_infoframe()?"))
+	}
+	
+	empty_y_var <- obj$design_frame[["y_var"]] %>% purrr::map_lgl(.f = ~{length(.)==0L})
+	if(any(empty_y_var)) {
+		rlang::abort(c("Empty 'y_var' entries found in design_frame:",
+					 i="Please remove these using: `my_design_frame %>% filter(pull(y_var) %>% lapply(length) %>% unlist()>0)`.",
+					 x="Problems with", 
+					 rlang::quo_text(obj$design_frame[["y_var"]][empty_y_var])))
+	}
+	# problem_singular <- 
+	# 	obj$df %>%
+	# 	dplyr::select(dplyr::all_of(.env$y_var)) %>%
+	# 	dplyr::select(dplyr::all_of(names(.)[purrr::map_lgl(., .f = ~all(is.na(.x)))])) %>%
+	# 	names()
+	# if(length(problem_singular)>0L) {
+	# 	rlang::warn(c("There is only NA in ", rlang::quo_text(problem_singular), ". Will skip."))
+	# 	return()
+	# }
+	# if(any(is.na(y_colour_set)) || !all(is_colour(y_colour_set))) {
+	# 	rlang::warn("No valid colours provided in ", 
+	# 				rlang::quo_text(y_colour_set), ". Using default.") # SHOULD THIS NOT ALREADY SET THESE COLOURS??
+	# }
+	# 
+	obj
+	## SHould test that there is not all missing y_var in design_frame
+	
+}
+
+
 
 #' Given Ordered Integer Vector, Return Requested Set.
 #' 
@@ -459,7 +542,6 @@ colour_picker <- function(type, unique_set_group, unique_set,
 #'
 #' @importFrom utils combn
 #' @return A data frame
-#' @export
 #' @examples combn_upto()
 combn_upto <- function(vec=c("a", "b", "c", "d", "e", "f", "g"), n_min=6L, n_max=length(vec)) {
 	stopifnot(purrr::is_integer(as.integer(n_min)))
@@ -475,11 +557,11 @@ combn_upto <- function(vec=c("a", "b", "c", "d", "e", "f", "g"), n_min=6L, n_max
 #' @param string String vector
 #' @param maxwidth Maximum width
 #' @return String vector
-#' @export
 #' @examples center_string(string=c("This is a very long label for a graph.",
 #' "But this one is even longer due to superfluous and verbose way of writing"),
 #'  maxwidth=20)
-center_string <- function(string, maxwidth=50) {
+center_string <- 
+	function(string, maxwidth=50) {
 		sapply(string, USE.NAMES = F, function(x) {
 			maxw <- median(nchar(string))
 			maxw <- maxwidth
@@ -496,4 +578,4 @@ center_string <- function(string, maxwidth=50) {
 			}
 		})
 	}
-
+centre_string <- center_string

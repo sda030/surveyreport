@@ -15,6 +15,8 @@ subset_vector(
 
 \item{set}{A character string, one of c("top", "upper", "mid_upper", "lower",
 "mid_lower", "bottom")}
+
+\item{maximize_n}{The number of values to extract when set is "maximize".}
 }
 \value{
 Selected set of vector.

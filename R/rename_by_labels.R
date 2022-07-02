@@ -1,7 +1,8 @@
 #' Rename Dataset Columns by Labels.
 #'
 #' Occasionally dataframe columns have not been named logically and consistent in the 
-#' software where the data originates. This function renames 
+#' software where the data originates. This function renames variable names
+#' based on patterns in the variable labels, after ignoring some stop words.
 #'
 #' @param data Dataset.
 #' @param label_sep The separator between group part and unique part of label.
@@ -10,7 +11,7 @@
 #' @param stop_words Words to ignore in label when abbreviating label to name.
 #'
 #' @return Data with renamed variable names.
-#' @importFrom dplyr arrange group_by ungroup mutate rename_with pull
+#' @importFrom dplyr arrange group_by ungroup mutate rename_with pull n
 #' @importFrom vctrs as_list_of
 #' @importFrom labelled lookfor
 #' @importFrom tidyr separate unite
@@ -44,7 +45,7 @@ rename_by_labels <-
 		df_labels <- dplyr::arrange(df_labels, .data$label_pre, .data[[sort_var]])
 		df_labels <- dplyr::group_by(df_labels, .data$label_pre)
 		df_labels <- dplyr::mutate(df_labels,
-								   label_suf_no = if(n()==1L) NA_character_ else if(n()<10L) sprintf("%01d", seq_len(n())) else if(n()>=10L) sprintf("%02d", seq_len(n())))
+								   label_suf_no = if(dplyr::n()==1L) NA_character_ else if(n()<10L) sprintf("%01d", seq_len(n())) else if(dplyr::n()>=10L) sprintf("%02d", seq_len(dplyr::n())))
 		df_labels <- dplyr::ungroup(df_labels)
 		df_labels <- tidyr::unite(df_labels, col = "variable_new", c(.data$label_pre3, .data$label_suf_no), sep = new_var_sep, na.rm = TRUE)
 		data <- dplyr::rename_with(.data = data,
