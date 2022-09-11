@@ -15,9 +15,20 @@ knitr::opts_chunk$set(echo = TRUE)
 - Split off MplusAutomation extentions
 - Split off janitor tabyl extensions (which should be split itself into janitor and tabyl)
 - Split off read_surveyxact to separate package (for reading in surveymonkey, etc)
--- Or push SX to export proper formats
+- Split off rename_variables into either janitor or a vctrs::vec_as_names() extension
+- Push SX to export proper formats. Move to Qualtrics or Nettskjema
 - Graph related stuff into existing graph package? Or tidySEM, etc?
 
+
+
+
+## infoframe returns data frame with items (rows) and diagnostics (columns)
+	Improvement over time (p1-p0)
+	IRT parameters (a, b, c), with low discriminators, and extremely hard/easy items flagged
+	Items with responses above/below 95/5 percentage flagged
+	Low CFA loadings
+	Loadings improved if item removed
+	
 # Overall design
 -	User should be allowed to add arbitrary number of special barcharts, captions, etc. So each adder should have a suffix-labelling argument.
 -   Each of the add_ functions should call an underlying hidden function that generates the specified output for a single case, and the add\_\* function will loop across all rows in the design frame with purrr::pmap() and attach the output using a standard helper function. Then an autoreport-function could do looping itself by only calling underlying functions
@@ -36,16 +47,7 @@ knitr::opts_chunk$set(echo = TRUE)
 -	Make generalisert TIC, theta, item thresholds-grafmaker som tar mirt, MplusAutomation, lavaan, TAM, etc)
 
 
-
-# read_surveyxact
--	TEST: Ansi files with colon, semicolon, etc. Short and long Excel files. All kinds of character sets. All kinds of variables.
--   Tick boxes do not get correct label suffix? Automatically fix NA/FALSE for these? 
--   Get SX to fix the bug in labels header
--   Get SX to fix the bug in Excel-sheets being separated into dataset(1)(2), etc.
--	Get SX to fix bug in Structure.csv having a phantom column at the end...
--	Alert labelled-author that `df_data <- labelled::set_value_labels(df_data, .labels = df_labels, .strict = FALSE)` fails
-
-## rename_vars_by_label()
+# rename_vars_by_label()
 -   Rename variable names in df_data to match labels? Then original var names don't matter.
 
 # step_auto_tick_recode

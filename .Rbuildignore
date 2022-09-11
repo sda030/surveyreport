@@ -1,2 +1,7 @@
 ^surveyreport\.Rproj$
 ^\.Rproj\.user$
+TODO.Rmd$
+^README\.Rmd$
+^README\.md$
+^data-raw$
+^tmp\.docx

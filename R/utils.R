@@ -1,9 +1,9 @@
 
 
 #' Given Ordered Integer Vector, Return Requested Set.
-#' 
+#'
 #' Useful for identifying which categories are to be collected.
-#' 
+#'
 #' @param vec A vector of any type.
 #' @param set A character string, one of c("top", "upper", "mid_upper", "lower",
 #'   "mid_lower", "bottom")
@@ -15,8 +15,8 @@
 #' @examples
 #' subset_vector(vec=1:7, set="mid_lower")
 
-subset_vector <- function(vec, set=c("top", "upper", "mid_upper", 
-									 "lower", "mid_lower", "bottom", "maximize"), 
+subset_vector <- function(vec, set=c("top", "upper", "mid_upper",
+									 "lower", "mid_lower", "bottom", "maximize"),
 						  maximize_n=NULL) {
 	set <- rlang::arg_match(set)
 	n <- length(vec)
@@ -88,12 +88,12 @@ subset_vector <- function(vec, set=c("top", "upper", "mid_upper",
 }
 
 
-#' Recode Missing By Type of Missingness 
-#' 
+#' Recode Missing By Type of Missingness
+#'
 #' Useful for item difficulty estimation according to Mislevy's recommendation.
-#'     Also allowing for escaping rows with all missingess (typically 
+#'     Also allowing for escaping rows with all missingess (typically
 #'     not administered).
-#'     
+#'
 #' @param df Data frame, or vector. Must be a dataframe, not a matrix, in this
 #'   function. Only include item variables.
 #' @param accept_vector Handles vectors if accept_vector=TRUE. Set to false to
@@ -163,8 +163,8 @@ subset_vector <- function(vec, set=c("top", "upper", "mid_upper",
 #'
 #' y_i2 <- omitted_recoder_df(input) #Mislevy item estimation
 #' y_p2 <- omitted_recoder_df(input, skipped = 0L, #Mislevy person estimation
-#'                            not_administered = 0L, all_missing = 0L) 
-#' y_info2 <- omitted_recoder_df(input, skipped = 99, 
+#'                            not_administered = 0L, all_missing = 0L)
+#' y_info2 <- omitted_recoder_df(input, skipped = 99,
 #'                               not_administered = 999, all_missing = 9999)
 #' identical(y_i, y_i2)
 #' identical(y_p, y_p2)
@@ -172,13 +172,13 @@ subset_vector <- function(vec, set=c("top", "upper", "mid_upper",
 #' \dontrun{
 #' omitted_recoder_df(input[,4]) # Should fail
 #' }
-#' identical(omitted_recoder_df(input[,4], accept_vector=TRUE), 
+#' identical(omitted_recoder_df(input[,4], accept_vector=TRUE),
 #'          c(0,0,0,0,0,0,0,NA,NA))
-#' identical(omitted_recoder_df(input[,4, drop=FALSE]), 
+#' identical(omitted_recoder_df(input[,4, drop=FALSE]),
 #'           input[,4, drop=FALSE]) # Output should equal input
-#' 
-omitted_recoder_df <- function(df, accept_vector=FALSE, skipped=0L, 
-							   not_administered=NA_integer_, 
+#'
+omitted_recoder_df <- function(df, accept_vector=FALSE, skipped=0L,
+							   not_administered=NA_integer_,
 							   all_missing=NA_integer_) {
 	omittedRecoderVec <- function(vec) {
 		vec_new <- vec
@@ -213,7 +213,7 @@ omitted_recoder_df <- function(df, accept_vector=FALSE, skipped=0L,
 			rlang::warn("Unable to recode single-column data.frame without knowing context.")
 			df
 		} else {
-			rlang::set_names(as.data.frame(t(apply(df, 1, omittedRecoderVec))), 
+			rlang::set_names(as.data.frame(t(apply(df, 1, omittedRecoderVec))),
 							 nm=colnames(df))
 		}
 	}
@@ -236,7 +236,6 @@ omitted_recoder_df <- function(df, accept_vector=FALSE, skipped=0L,
 #' @return Data frame, optionally with the missing variable added, set with the
 #'   global_default if it is among the options.
 #'
-#' @examples
 check_options <- function(df, df_var, global_default, options) {
 	if(is.null(df[[df_var]])) {
 		df[[df_var]] <- global_default
@@ -247,8 +246,8 @@ check_options <- function(df, df_var, global_default, options) {
 			if(length(invalid) > 0L) {
 				rlang::abort(c("Incorrect options:",
 							 x=paste0('Variable `', df_var, '` in design frame contains invalid options'),
-								rlang::quo_text(invalid), 
-							i='Please use one of:', 
+								rlang::quo_text(invalid),
+							i='Please use one of:',
 							rlang::quo_text(options)))
 			}
 		} else if(class(options) != class(df[[df_var]])) {
@@ -264,9 +263,9 @@ check_options <- function(df, df_var, global_default, options) {
 
 
 #' Are All Colours in Vector Valid Colours
-#' 
+#'
 #' As title says. From: http://stackoverflow.com/a/13290832/3315962
-#' 
+#'
 #' @param x Character vector of colours in hex-format.
 #'
 #' @return Logical, or error.
@@ -282,9 +281,9 @@ is_colour <- function(x) {
 }
 
 #' Identify Suitable Font Given Background Hex Colour
-#' 
+#'
 #' Code is taken from XXX.
-#' 
+#'
 #' @param hex_code Colour in hex-format.
 #'
 #' @return Colours in hex-format, either black or white.
@@ -294,21 +293,21 @@ is_colour <- function(x) {
 #' @examples
 #' hex_bw("#0dadfd")
 hex_bw <- function(hex_code) {
-	
+
 	myrgb <- as.integer(col2rgb(hex_code))
-	
+
 	rgb_conv <- lapply(myrgb, function(x) {
 		i <- x / 255
 		if (i <= 0.03928) i / 12.92 else ((i + 0.055) / 1.055) ^ 2.4
 	})
 	rgb_calc <- (0.2126*rgb_conv[[1]]) + (0.7152*rgb_conv[[2]]) + (0.0722*rgb_conv[[3]])
-	
+
 	if (rgb_calc > 0.179) return("#000000") else return("#ffffff")
-	
+
 }
 
 #' Provide A Colour Set for A Number of Requested Colours
-#' 
+#'
 #' Possibly using user_colour_set if available. If not sufficient, uses a set
 #'     palette from RColorBrewer.
 #'
@@ -322,12 +321,12 @@ hex_bw <- function(hex_code) {
 #' @examples
 #' get_colour_set(n_colours_needed=4)
 # get_colour_set <- function(n_colours_needed, user_colour_set=NULL) {
-# 	
+#
 # 	if(!is.null(user_colour_set) &&
 # 	   length(user_colour_set) >= n_colours_needed &&
 # 	   all(is_colour(user_colour_set))) {
 # 		if(length(user_colour_set)==7L) {
-# 			
+#
 # 			x <- 1:length(user_colour_set)
 # 			if(n_colours_needed==7L) return(user_colour_set)
 # 			if(n_colours_needed==6L) return(user_colour_set[c(1:3, 5:length(x))])
@@ -344,8 +343,9 @@ hex_bw <- function(hex_code) {
 # 		sample(unlist(out), n_colours_needed)
 # 	}
 # }
-get_colour_set <- function(n_colours_needed, user_colour_set=NULL, seed=1) {
-	
+get_colour_set <-
+  function(n_colours_needed, user_colour_set=NULL, seed=1) {
+
 	if(!is.null(user_colour_set) &&
 	   length(user_colour_set) >= n_colours_needed &&
 	   all(is_colour(user_colour_set))) {
@@ -373,51 +373,53 @@ get_colour_set <- function(n_colours_needed, user_colour_set=NULL, seed=1) {
 #' @importFrom rlang abort
 #' @importFrom vctrs vec_assert
 #' @importFrom purrr map2
-#' @export
 #'
-#' @examples
-colour_picker <- function(type, unique_set_group, unique_set, 
-						  colour_set_ordinal, colour_set_nominal) {
+colour_picker <-
+  function(type,
+           unique_set_group,
+           unique_set,
+           colour_set_ordinal,
+           colour_set_nominal) {
 	vctrs::vec_assert(x = type, ptype = character())
 	vctrs::vec_assert(x = unique_set_group, ptype = list())
 	vctrs::vec_assert(x = unique_set, ptype = list())
-	
+
 	if(length(type) != length(unique_set_group)) {
 		rlang::abort(c("type and unique_set_group are not of equal length.",
-					   x=paste0("type is of length ", length(type), 
+					   x=paste0("type is of length ", length(type),
 					   		 " whereas unique_set_group is of length ", length(unique_set_group))))
 	}
 	if(length(unique_set) != length(unique_set_group)) {
 		rlang::abort(c("unique_set and unique_set_group are not of equal length.",
-					   x=paste0("unique_set is of length ", length(unique_set), 
+					   x=paste0("unique_set is of length ", length(unique_set),
 					   		 " whereas unique_set_group is of length ", length(unique_set_group))))
 	}
 	lengths_comparisons <- lengths(unique_set) <= lengths(unique_set_group)
 	if(!all(lengths_comparisons)) {
 		rlang::abort(c("unique_set and unique_set_group contain vectors of pairwise unequal lengths.",
-					   x=paste0("Problem(s) at row ", which(!lengths_comparisons), 
-					   		 " when unique_set is ", lengths(unique_set)[!lengths_comparisons], 
+					   x=paste0("Problem(s) at row ", which(!lengths_comparisons),
+					   		 " when unique_set is ", lengths(unique_set)[!lengths_comparisons],
 					   		 " and unique_set_group is ", lengths(unique_set_group)[!lengths_comparisons])))
 	}
 	# out <-
-		purrr::map(.x = 1:length(type),# .y = unique_set, 
+		purrr::map(.x = seq_along(type),# .y = unique_set,
 				function(i) {
 					vctrs::vec_assert(x = unique_set_group[[i]], ptype = character())
 					vctrs::vec_assert(x = unique_set[[i]], ptype = character())
-					
+
 					n_unique_set_i <- length(unique_set[[i]])
 					n_unique_set_group_i <- length(unique_set_group[[i]])
 
 					if(!is.na(type[i]) && type[i] %in% c("ordinal", "interval")) {
 						rlang::set_names(
-							x = unname(get_colour_set(n_colours_needed = n_unique_set_group_i, 
+							x = unname(get_colour_set(n_colours_needed = n_unique_set_group_i,
 												  user_colour_set = colour_set_ordinal)),
 							nm = unique_set_group[[i]])[unique_set[[i]]]
-						
-					} else if(!is.na(type[i]) && type[i] == "nominal" && 
+
+					} else if(!is.na(type[i]) && type[i] == "nominal" &&
 							  n_unique_set_group_i <= 12) { # Why this limit here only?
 						rlang::set_names(
-							x = unname(get_colour_set(n_colours_needed = n_unique_set_group_i, 
+							x = unname(get_colour_set(n_colours_needed = n_unique_set_group_i,
 											  user_colour_set = colour_set_nominal)),
 							nm = unique_set_group[[i]])[unique_set[[i]]]
 					} else NA_character_
@@ -432,20 +434,25 @@ colour_picker <- function(type, unique_set_group, unique_set,
 #' @param df Data frame
 #'
 #' @return A data frame
-#'
+#' @export
 
-.remove_special_chars_in_labels <- 
+remove_special_chars_in_labels <-
 	function(df) {
-		labelled::val_labels(df) <-
-			labelled::val_labels(df) %>%
-			purrr::map2(.x = ., .y=names(.), .f=function(x, y) {
+	  z <-
+			labelled::val_labels(df)
+	  z <-
+			purrr::map2(.x = z,
+			            .y = names(z),
+			            .f = function(x, y) {
 				if(!is.null(x) && any(grepl("<|>", names(x)))) {
-					rlang::warn(paste0("Current version of function doesn't handle special characters `<` or `>` in labels.",
-									   "Will remove these in ", y))
+					cli::cli_warn(c(
+					  "Current version of function doesn't handle special characters `<` or `>` in labels.",
+					  i="Will remove these in {{y}}"))
 					names(x)<- gsub("<|>", "", names(x))
 				}
 				x
-			})	
+			})
+	  labelled::val_labels(df) <- z
 		df
 	}
 
@@ -461,12 +468,16 @@ colour_picker <- function(type, unique_set_group, unique_set,
 #' @return A data frame
 #' @export
 #' @examples combn_upto()
-combn_upto <- function(vec=c("a", "b", "c", "d", "e", "f", "g"), n_min=6L, n_max=length(vec)) {
+combn_upto <-
+  function(vec=c("a", "b", "c", "d", "e", "f", "g"),
+           n_min=6L,
+           n_max=length(vec)) {
 	stopifnot(purrr::is_integer(as.integer(n_min)))
 	stopifnot(n_max<=length(vec))
-	unlist(lapply(n_min:n_max, function(x) utils::combn(x = vec, m = x, simplify = F)), recursive = FALSE) %>%
-		rlang::set_names() %>%
-		rev()
+	x <-
+	  unlist(lapply(n_min:n_max, function(x) utils::combn(x = vec, m = x, simplify = F)), recursive = FALSE)
+	x <- rlang::set_names(x, x)
+	rev(x)
 }
 
 
@@ -484,7 +495,7 @@ center_string <- function(string, maxwidth=50) {
 			maxw <- median(nchar(string))
 			maxw <- maxwidth
 			if(nchar(x)<maxw) {
-				x 
+				x
 			} else {
 				if(nchar(x)>=maxw & nchar(x)<2*maxw) {
 					stringr::str_wrap(x, nchar(x)/2)
@@ -497,3 +508,62 @@ center_string <- function(string, maxwidth=50) {
 		})
 	}
 
+
+###  Check that all pairs of cols share at least one observed response category
+check_category_pairs <-
+  function(data, cols_pos, call = rlang::caller_env()) {
+    purrr::walk2(.x = unname(cols_pos),
+                 .y = names(cols_pos),
+                 .f = function(x, y) {
+                   cols_rest <-
+                     cols_pos[-c(1:match(y, names(cols_pos)))]
+                   purrr::walk2(.x = unname(cols_rest),
+                                .y = names(cols_rest),
+                                .f = function(x2, y2) {
+                                  common <-
+                                    dplyr::intersect(
+                                      levels(data[[y]]),
+                                      levels(data[[y2]]))
+                                  if(length(common) == 0L) {
+                                    cli::cli_abort(
+                                      c("Unequal variables.",
+                                        "!" = "All variables must share at least one common category.",
+                                        "i" = "Column {.var {y}} and column {.var {y2}} lack common categories."
+                                      ),
+                                      call = call)
+                                  }
+                                })
+                 })
+  }
+
+#' Prepare Frequencies Table for Likert Graphs
+#'
+#' @param data data.frame
+#'
+#' @return Data frame.
+#' @export
+#'
+#' @examples prepare_freq_data(ex_survey1[, paste0("p_", 1:4)])
+prepare_freq_data <-
+  function(data) {
+    data <- swap_label_colnames(data)
+    data <- tidyr::pivot_longer(data, cols = tidyselect::everything())
+    data <- dplyr::mutate(data, addNA(.data$value))
+    data <- dplyr::count(data, .data$name, .data$value)
+    data <- dplyr::group_by(data, .data$name)
+    data <- dplyr::mutate(data,
+                          n = .data$n/sum(.data$n, na.rm=TRUE)*100,
+                          label = sprintf("%.1f%%", .data$n))
+    dplyr::ungroup(data)
+  }
+
+
+use_docx <- function(docx_template = NULL) {
+  if(!is.null(docx_template)) {
+    if(is.character(docx_template) &&
+       length(docx_template) == 1L &&
+       file.exists(docx_template)) {
+      officer::read_docx(path = docx_template)
+    } else docx_template
+  } else officer::read_docx()
+}

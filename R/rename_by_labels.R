@@ -1,6 +1,6 @@
 #' Rename Dataset Columns by Labels.
 #'
-#' Occasionally dataframe columns have not been named logically and consistent in the 
+#' Occasionally dataframe columns have not been named logically and consistent in the
 #' software where the data originates. This function renames variable names
 #' based on patterns in the variable labels, after ignoring some stop words.
 #'
@@ -21,14 +21,14 @@
 #'
 #' @examples
 #' rename_by_labels(ex_survey1)
-rename_by_labels <- 
-	function(data, 
-			 label_sep=" - ", 
-			 sort_var=c("pos", "variable", "label"), 
+rename_by_labels <-
+	function(data,
+			 label_sep=" - ",
+			 sort_var=c("pos", "variable", "label"),
 			 new_var_sep="_",
 			 stop_words=unique(c(stopwords[["en"]], "where", "is", "do", "which", "how", "to"))) {
 		sort_var <- rlang::arg_match(sort_var)
-		
+
 		df_labels <- labelled::lookfor(data = data, details = FALSE)
 		df_labels <- tidyr::separate(data = df_labels, col = .data$label, sep = label_sep, fill = "right",
 									 into = c("label_pre", "label_suf"), remove = FALSE)
@@ -53,3 +53,50 @@ rename_by_labels <-
 								   					  .f = ~dplyr::pull(df_labels[df_labels$variable == .x, "variable_new"])))
 		data
 	}
+
+
+#' Swap Dataset Columns and Labels
+#'
+#' Columns not containing labels will remain unaffected, and warning given.
+#'
+#' @param data Data frame or tibble.
+#'
+#' @return Data.frame/tibble.
+#' @export
+#'
+#' @examples swap_label_colnames(mtcars)
+swap_label_colnames <-
+  function(data) {
+    cls <- class(data)
+    if(!inherits(data, "data.frame")) cli::cli_abort("{.arg data} must be a {.cls data.frame}.")
+
+    colname <- colnames(data)
+    data <- remove_special_chars_in_labels(data)
+    lacking_labels <- c()
+    label <- lapply(colname, function(.x) {
+      l <- attr(data[[.x]], "label")
+      if(is.null(l)) {
+        assign(x = "lacking_labels",
+               value = c(lacking_labels, .x),
+               envir = rlang::env_parent())
+        .x
+      } else l
+    })
+    label <- as.character(unlist(label))
+    if(length(lacking_labels)>0L) {
+      cli::cli_warn(c(i="Missing labels for columns: {.var {lacking_labels}}.",
+                      i="Leaving column names untouched for these."))
+    }
+
+    data <-
+      lapply(seq_along(data), function(.x) {
+        if(!is.null(colname[.x])) {
+          attr(data[[.x]], "label") <- colname[[.x]]
+        }
+      data[[.x]]
+    })
+    data <- as.data.frame(data)
+    colnames(data) <- label
+    class(data) <- cls
+    data
+  }
