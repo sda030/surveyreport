@@ -1,0 +1,33 @@
+Package: surveyreport
+Type: Package
+Title: Automatic Reports in Office Format Based on Tidy Specifications
+Version: 0.0.0.9000
+Author: Stephan Daus
+Maintainer: Stephan Daus <stephus.daus@gmail.com>
+Description: Produces highly customizable figures, text, analyses and reports for a batch of possible dpendent-independent relations of possible interest.
+License: file LICENSE
+Encoding: UTF-8
+LazyData: true
+Depends:
+    R (>= 3.5.0)
+Imports: 
+    purrr,
+    tidyr,
+    rlang,
+    cli,
+    tidyselect,
+    officer,
+    mschart,
+    RColorBrewer,
+    utils,
+    stats
+    stringr,
+    scales,
+    utils,
+    stats,
+    progress,
+Suggests:
+    viridisLite,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+RoxygenNote: 7.2.0
