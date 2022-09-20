@@ -6,13 +6,14 @@
 \usage{
 create_chart_likert(
   data,
-  y = "n",
-  x = "name",
-  group = "value",
-  labels = "label",
+  y = "value",
+  x = "label",
+  group = "variable",
+  labels = "data_label",
   label_font_size = 10,
   main_font_size = 8,
   colour_palette = NULL,
+  colour_na = "gray90",
   seed = 1
 )
 }
@@ -29,12 +30,15 @@ create_chart_likert(
 
 \item{label_font_size}{[\code{integer(1)}]\cr Font size for data labels}
 
-\item{main_font_size}{[\code{integer(1)}]\cr Font size for all other text}
+\item{main_font_size}{[\code{integer(1)}]\cr Font size for all other text
+Must contain at least the number of unique values (excl. missing) in the data set.}
 
-\item{colour_palette}{[\code{character()}]\cr}
-
-\item{seed}{Optional random seed for selection of colours in blender.
+\item{colour_palette}{[\code{character()}]\cr
 Must contain at least the number of unique values (incl. missing) in the data set.}
+
+\item{colour_na}{[\code{character(1)}]\cr Colour as a single string.}
+
+\item{seed}{Optional random seed for selection of colours in blender.}
 }
 \value{
 mschart-object. Can be added to an rdocx, rpptx or rxlsx object.
@@ -43,8 +47,5 @@ mschart-object. Can be added to an rdocx, rpptx or rxlsx object.
 Create Likert Chart from Descriptives Data Frame
 }
 \examples{
-data(ex_survey1)
-dat <- ex_survey1[,c("b_1", "b_2", "b_3")]
-dat_freq <- prepare_freq_data(dat)
-create_chart_likert(dat_freq)
+#create_chart_likert(prepare_data_for_mschart(ex_survey1[paste0("b_", 1:3)]))
 }

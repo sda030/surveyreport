@@ -7,24 +7,24 @@
 #' @param labels [\code{character(1)}]\cr Name of column in data for labels.
 #' @param label_font_size [\code{integer(1)}]\cr Font size for data labels
 #' @param main_font_size [\code{integer(1)}]\cr Font size for all other text
+#' Must contain at least the number of unique values (excl. missing) in the data set.
 #' @param colour_palette [\code{character()}]\cr
-#' @param seed Optional random seed for selection of colours in blender.
 #' Must contain at least the number of unique values (incl. missing) in the data set.
+#' @param colour_na [\code{character(1)}]\cr Colour as a single string.
+#' @param seed Optional random seed for selection of colours in blender.
+#' @importFrom crosstable crosstable
 #'
 #' @return mschart-object. Can be added to an rdocx, rpptx or rxlsx object.
-#' @export
 #'
 #' @examples
-#' data(ex_survey1)
-#' dat <- ex_survey1[,c("b_1", "b_2", "b_3")]
-#' dat_freq <- prepare_freq_data(dat)
-#' create_chart_likert(dat_freq)
+#' #create_chart_likert(prepare_data_for_mschart(ex_survey1[paste0("b_", 1:3)]))
 create_chart_likert <-
   function(data,
-           y="n", x="name", group="value", labels="label",
+           y="value", x="label", group="variable", labels="data_label",
            label_font_size = 10,
            main_font_size = 8,
            colour_palette = NULL,
+           colour_na = "gray90",
            seed=1) {
 
     coll <- checkmate::makeAssertCollection()
@@ -32,11 +32,13 @@ create_chart_likert <-
     checkmate::assert_string(x, add = coll)
     checkmate::assert_string(group, add = coll)
     checkmate::assert_string(labels, add = coll)
-    checkmate::assert_string(labels, add = coll)
+    checkmate::assert_character(colour_palette, null.ok = TRUE, add = coll)
+    checkmate::assert_string(colour_na, na.ok = TRUE, null.ok = TRUE, add = coll)
     checkmate::assert_number(label_font_size, lower = 0, upper = 72, finite = TRUE, add = coll)
     checkmate::assert_number(main_font_size, lower = 0, upper = 72, finite = TRUE, add = coll)
+    checkmate::assert_number(seed, lower = 1, finite = TRUE, add = coll)
     checkmate::assert_data_frame(data, add = coll)
-    checkmate::assert_subset(x = colnames(data), choices = c(y,x,group,labels), add = coll)
+    checkmate::assert_subset(x = colnames(data), choices = c(y,x,group,labels, ".id"), add = coll)
     if(!is.null(colour_palette) & !all(is_colour(colour_palette))) {
       cli::cli_abort(
         c("Invalid user-specified colours.",
@@ -45,11 +47,16 @@ create_chart_likert <-
     checkmate::reportAssertions(coll)
 
     colour_palette <-
-        get_colour_set(n_colours_needed = dplyr::n_distinct(data[[group]], na.rm = FALSE),
+        get_colour_set(n_colours_needed = length(levels(data[[group]])),
                        user_colour_set = colour_palette,
                        seed = seed)
+
     colour_palette <-
-      rlang::set_names(colour_palette, nm=unique(data[[group]]))
+      rlang::set_names(colour_palette, nm=levels(data[[group]]))
+
+    if(!is.null(colour_na) && !is.na(colour_na)) {
+      colour_palette[names(colour_palette)=="NA"] <- colour_na
+    }
 
 
     fp_text_settings <-
@@ -96,22 +103,32 @@ create_chart_likert <-
 #' @param main_font_size [\code{integer(1)}]\cr Font size for all other text
 #' @param colour_palette [\code{character()}]\cr
 #' Must contain at least the number of unique values (incl. missing) in the data set.
+#' @param colour_na [\code{character(1)}]\cr Colour as a single string.
 #' @param chart_formatting [\code{integer(1)}]\cr
 #' Which template style to be used for formatting chart?
 #' @param height_per_col [\code{numeric(1)>0}]\cr Height in cm per chart entry.
 #' @param height_fixed [\code{numeric(1)>0}]\cr Fixed height in cm.
 #' @param seed Optional random seed for selection of colours in blender.
-#'
-#' @return
+#' @importFrom crosstable crosstable
+#' @importFrom tidyselect everything
+#' @importFrom stats ave
+#' @return rdocx object, which can be saved with officer:::print.rdocx()
 #' @export
 #'
 #' @examples
+#' library(dplyr) # For piping
+#' library(officer) # To save the rdocx object to disk
+#' ex_survey1 %>%
+#'   report_chart_likert(cols = a_1:a_9) %>%
+#'   print(target = "test_docx_a19.docx")
+#' file.remove("test_docx_a19.docx")
 report_chart_likert <-
 	function(data,
-			 cols,
+			 cols = everything(),
 			 docx_template = NULL,
 			 label_font_size = 8,
 			 colour_palette = NULL,
+			 colour_na = "gray90",
 			 chart_formatting = NULL,
 			 height_per_col = .3,
 			 height_fixed = 1,
@@ -130,10 +147,6 @@ report_chart_likert <-
 
 
 
-		prepared_data <- data[, cols_pos]
-		prepared_data <-
-		  prepare_freq_data(data = data)
-
 		docx_file <- use_docx(docx_template = docx_template)
 		docx_dims <- officer::docx_dim(docx_file)
 		docx_dims <- c(w =
@@ -145,11 +158,16 @@ report_chart_likert <-
 		                 docx_dims$margins[["top"]] -
 		                 docx_dims$margins[["bottom"]])
 
+
+
+
+		data <- prepare_data_for_mschart(data[, cols_pos])
+
 		chart <-
-		  create_chart_likert(data = prepared_data,
-		                      y = "n", x = "name", group = "value", labels = "label",
+		  create_chart_likert(data = data,
 		                      label_font_size = label_font_size,
 		                      colour_palette = colour_palette,
+		                      colour_na = colour_na,
 		                      main_font_size = main_font_size,
 		                      seed = seed)
 
@@ -166,3 +184,27 @@ report_chart_likert <-
 
 		docx_file
 	}
+
+
+#' Helper Function to Prepare Data for create_chart_likert
+#'
+#' @param data Dataset
+#'
+#' @return Dataset
+prepare_data_for_mschart <-
+  function(data) {
+    data <- crosstable(data = data, percent_pattern = "{n}")
+
+    data <- as.data.frame(data)
+    data$value <- as.integer(data$value)
+    data$data_label <- ave(x = data$value, data$label,
+                                    FUN = function(x) sprintf("%.1f%%", x/sum(x, na.rm = T)*100))
+    data$n_unique <- ave(x = data$variable, data$label,
+                                  FUN = function(x) length(unique(x)))
+    fct_max <- max(data$n_unique, na.rm = TRUE)
+    fct_uniques <- unique(data[data$n_unique == fct_max, "variable"])
+
+    data$n_unique <- NULL
+    data$variable <- factor(data$variable, levels = fct_uniques)
+    data
+  }

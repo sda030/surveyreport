@@ -223,43 +223,6 @@ omitted_recoder_df <- function(df, accept_vector=FALSE, skipped=0L,
 
 
 
-#' Mostly an internal function to check whether options provided are valid
-#'
-#' Not much else to say.
-#'
-#' @param df Typically a design frame or a var_frame.
-#' @param df_var Character string for variable name.
-#' @param global_default If missing, what to set as default value.
-#' @param options A type (character()) or a character vector with valid options.
-#'
-#' @importFrom rlang inform abort
-#' @return Data frame, optionally with the missing variable added, set with the
-#'   global_default if it is among the options.
-#'
-check_options <- function(df, df_var, global_default, options) {
-	if(is.null(df[[df_var]])) {
-		df[[df_var]] <- global_default
-		rlang::inform(paste0('Variable `', df_var, '` does not exist in design frame. Adding and using global default: `', global_default, "`"))
-	} else {
-		if(!is.numeric(options) && !is.numeric(df[[df_var]])) {
-			invalid <- unique(df[[df_var]][!df[[df_var]] %in% options])
-			if(length(invalid) > 0L) {
-				rlang::abort(c("Incorrect options:",
-							 x=paste0('Variable `', df_var, '` in design frame contains invalid options'),
-								rlang::quo_text(invalid),
-							i='Please use one of:',
-							rlang::quo_text(options)))
-			}
-		} else if(class(options) != class(df[[df_var]])) {
-			rlang::abort(c(x=paste0('Variable `', df_var, '` in design frame is of class ', class(df[[df_var]])),
-						   i=paste0('Options expect ', class(options))))
-		} else if(any(is.na(df[[df_var]]))) {
-			df[is.na(df[[df_var]]), df_var] <- global_default
-			rlang::inform(paste0('Variable `', df_var, '` in design frame contains NA. Using global default: `', global_default, "`"))
-		}
-	}
-	df
-}
 
 
 #' Are All Colours in Vector Valid Colours
@@ -535,28 +498,6 @@ check_category_pairs <-
                                 })
                  })
   }
-
-#' Prepare Frequencies Table for Likert Graphs
-#'
-#' @param data data.frame
-#'
-#' @return Data frame.
-#' @export
-#'
-#' @examples prepare_freq_data(ex_survey1[, paste0("p_", 1:4)])
-prepare_freq_data <-
-  function(data) {
-    data <- swap_label_colnames(data)
-    data <- tidyr::pivot_longer(data, cols = tidyselect::everything())
-    data <- dplyr::mutate(data, addNA(.data$value))
-    data <- dplyr::count(data, .data$name, .data$value)
-    data <- dplyr::group_by(data, .data$name)
-    data <- dplyr::mutate(data,
-                          n = .data$n/sum(.data$n, na.rm=TRUE)*100,
-                          label = sprintf("%.1f%%", .data$n))
-    dplyr::ungroup(data)
-  }
-
 
 use_docx <- function(docx_template = NULL) {
   if(!is.null(docx_template)) {

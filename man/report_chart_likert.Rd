@@ -6,10 +6,11 @@
 \usage{
 report_chart_likert(
   data,
-  cols,
+  cols = everything(),
   docx_template = NULL,
   label_font_size = 8,
   colour_palette = NULL,
+  colour_na = "gray90",
   chart_formatting = NULL,
   height_per_col = 0.3,
   height_fixed = 1,
@@ -30,6 +31,8 @@ Either a filepath to a template file, or a rdocx-object.}
 \item{colour_palette}{[\code{character()}]\cr
 Must contain at least the number of unique values (incl. missing) in the data set.}
 
+\item{colour_na}{[\code{character(1)}]\cr Colour as a single string.}
+
 \item{chart_formatting}{[\code{integer(1)}]\cr
 Which template style to be used for formatting chart?}
 
@@ -41,6 +44,17 @@ Which template style to be used for formatting chart?}
 
 \item{seed}{Optional random seed for selection of colours in blender.}
 }
+\value{
+rdocx object, which can be saved with officer:::print.rdocx()
+}
 \description{
 Create Word Report with Univariates for Categorical Columns Sharing Same Categories
+}
+\examples{
+library(dplyr) # For piping
+library(officer) # To save the rdocx object to disk
+ex_survey1 \%>\%
+  report_chart_likert(cols = a_1:a_9) \%>\%
+  print(target = "test_docx_a19.docx")
+file.remove("test_docx_a19.docx")
 }
