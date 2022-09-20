@@ -122,6 +122,34 @@ create_chart_likert <-
 #'   report_chart_likert(cols = a_1:a_9) %>%
 #'   print(target = "test_docx_a19.docx")
 #' file.remove("test_docx_a19.docx")
+#'
+#'
+#'   docx_template <-
+#'       system.file("template","NIFUmal_tom.docx",
+#'                    package = "surveyreport", mustWork = TRUE)
+#'   colour_palette <-
+#'     readxl::read_excel(system.file("template", "NIFUmal_stiler.xlsx",
+#'                                    package = "surveyreport", mustWork = TRUE),
+#'                        sheet = "NIFUblue") %>%
+#'     dplyr::pull(hex)
+#' chart_format <-
+#'  system.file("template", "NIFUmal_stiler.xlsx",
+#'              package = "surveyreport", mustWork = TRUE) %>%
+#'  readxl::read_excel(., sheet = 1) %>%
+#'  dplyr::filter(surveyreport_style == "figure") %>%
+#'  dplyr::pull(template_style)
+#'
+#'  test_docx_b13 <-
+#'    ex_survey1 %>%
+#'    report_chart_likert(cols = b_1:b_3,
+#'                        docx_template = docx_template,
+#'                        colour_palette = colour_palette,
+#'                        chart_formatting = chart_format,
+#'                        height_per_col = .3,
+#'                        height_fixed = 1)
+#' print(test_docx_b13, target = "test_docx_b13.docx")
+#' file.remove("test_docx_b13.docx")
+
 report_chart_likert <-
 	function(data,
 			 cols = everything(),
