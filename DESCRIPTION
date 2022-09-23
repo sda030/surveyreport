@@ -24,6 +24,7 @@ Imports:
     crosstable,
     dplyr,
     labelled,
+    infer,
     mschart,
     officer,
     purrr,
