@@ -2,26 +2,26 @@
 #' Extention to the infer package for multiple testing
 #'
 #' @inheritParams infer::t_test
+#' @inheritParams infer::chisq_test
+#' @inheritParams infer::prop_test
 #' @param test String indicating type of test done for all combinations.
 #'
 #' @importFrom dplyr mutate across
-#' @importFrom tidyselect eval_select all_of
-#' @importFrom tidyr drop_na
+#' @importFrom tidyselect eval_select
 #' @importFrom labelled remove_val_labels
-#' @importFrom broom tidy
 #' @importFrom purrr map_dfr
-#' @importFrom rlang set_names enquo arg_match
-#' @importFrom infer t_test
+#' @importFrom rlang set_names enquo arg_match sym
+#' @importFrom infer t_test chisq_test prop_test
 #' @return A tibble containing for each response-explanatory row combination
 #' columns summarizing the test statistic as obtained from broom::tidy().
 #' @export
 #'
 #' @examples
 #' library(dplyr)
-#' x <- t_test_multiple_comb(x = mtcars,
+#' x <- test_multiple_comb(x = mtcars,
 #'                      response = matches("mpg|disp|drat|hp|qsec"),
 #'                      explanatory = matches("vs|am"))
-t_test_multiple_comb <-
+test_multiple_comb <-
   function(x,
            formula = NULL,
            response = NULL,
@@ -33,7 +33,7 @@ t_test_multiple_comb <-
            p = NULL,
            conf_int = TRUE,
            conf_level = 0.95,
-           test = c("t-test two-sample", "chi-square", "prop"),
+           test = c("t-test two-sample", "chisq", "prop"),
            success = NULL,
            z = FALSE
   ) {
@@ -73,7 +73,7 @@ t_test_multiple_comb <-
                                        mu = mu,
                                        conf_int = conf_int,
                                        conf_level = conf_level)
-                       } else if(test == "chi-square") {
+                       } else if(test == "chisq") {
                          infer::chisq_test(x = x,
                                        response = !!resp_col,
                                        explanatory = !!expl_col,
