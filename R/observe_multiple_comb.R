@@ -6,11 +6,12 @@
 #' @inheritParams infer::prop_test
 #' @param test String indicating type of test done for all combinations.
 #'
-#' @importFrom dplyr mutate across
+#' @importFrom dplyr mutate across bind_cols summarize group_by n
 #' @importFrom tidyselect eval_select
 #' @importFrom labelled remove_val_labels
 #' @importFrom purrr map_dfr
-#' @importFrom rlang set_names enquo arg_match sym
+#' @importFrom tidyr pivot_wider
+#' @importFrom rlang set_names enquo arg_match sym :=
 #' @importFrom infer t_test chisq_test prop_test
 #' @return A tibble containing for each response-explanatory row combination
 #' columns summarizing the test statistic.
@@ -61,14 +62,18 @@ test_multiple_comb <-
 
                      if(length(expl_cols) == 0L) {
                        if(test == "t") {
-                       cbind(infer::t_test(x = x,
+                         means <- dplyr::summarize(x,
+                                                   !!resp_col := mean(!!resp_col, na.rm=TRUE),
+                                                   mu = mu)
+                         dplyr::bind_cols(
+                           infer::t_test(x = x,
                                      response = !!resp_col,
                                      order = order,
                                      alternative = alternative,
                                      mu = mu,
                                      conf_int = conf_int,
                                      conf_level = conf_level),
-                             tibble::tibble(mu = mu))
+                           means)
                        } else if(test == "chisq") {
                          infer::chisq_test(x = x,
                                            response = !!resp_col,
@@ -83,6 +88,15 @@ test_multiple_comb <-
                                         expl_col <- rlang::sym(explanatory)
 
                                         if(test == "t") {
+                                          means <- dplyr::group_by(x, !!expl_col)
+                                          means <- dplyr::summarize(means,
+                                                                    mean := mean(!!resp_col, na.rm=TRUE),
+                                                                    n = dplyr::n())
+                                          means <- tidyr::pivot_wider(means,
+                                                                      names_from = !!expl_col,
+                                                                      values_from = c(mean, n))
+                                          print(means)
+                                          dplyr::bind_cols(
                                           infer::t_test(x = x,
                                                         response = !!resp_col,
                                                         explanatory = !!expl_col,
@@ -90,7 +104,9 @@ test_multiple_comb <-
                                                         alternative = alternative,
                                                         mu = mu,
                                                         conf_int = conf_int,
-                                                        conf_level = conf_level)
+                                                        conf_level = conf_level),
+                                          means)
+
                                         } else if(test == "chisq") {
                                           infer::chisq_test(x = x,
                                                             response = !!resp_col,
