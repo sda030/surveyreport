@@ -16,7 +16,7 @@ test_multiple_comb(
   p = NULL,
   conf_int = TRUE,
   conf_level = 0.95,
-  test = c("t-test two-sample", "chisq", "prop"),
+  test = c("t", "chisq", "prop"),
   success = NULL,
   z = FALSE
 )
@@ -69,7 +69,7 @@ to see this connection.}
 }
 \value{
 A tibble containing for each response-explanatory row combination
-columns summarizing the test statistic as obtained from broom::tidy().
+columns summarizing the test statistic.
 }
 \description{
 Extention to the infer package for multiple testing
@@ -78,5 +78,6 @@ Extention to the infer package for multiple testing
 library(dplyr)
 x <- test_multiple_comb(x = mtcars,
                      response = matches("mpg|disp|drat|hp|qsec"),
-                     explanatory = matches("vs|am"))
+                     explanatory = matches("vs|am"),
+                     test = "t")
 }

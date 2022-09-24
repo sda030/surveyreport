@@ -13,14 +13,15 @@
 #' @importFrom rlang set_names enquo arg_match sym
 #' @importFrom infer t_test chisq_test prop_test
 #' @return A tibble containing for each response-explanatory row combination
-#' columns summarizing the test statistic as obtained from broom::tidy().
+#' columns summarizing the test statistic.
 #' @export
 #'
 #' @examples
 #' library(dplyr)
 #' x <- test_multiple_comb(x = mtcars,
 #'                      response = matches("mpg|disp|drat|hp|qsec"),
-#'                      explanatory = matches("vs|am"))
+#'                      explanatory = matches("vs|am"),
+#'                      test = "t")
 test_multiple_comb <-
   function(x,
            formula = NULL,
@@ -33,7 +34,7 @@ test_multiple_comb <-
            p = NULL,
            conf_int = TRUE,
            conf_level = 0.95,
-           test = c("t-test two-sample", "chisq", "prop"),
+           test = c("t", "chisq", "prop"),
            success = NULL,
            z = FALSE
   ) {
@@ -58,42 +59,58 @@ test_multiple_comb <-
 
                      resp_col <- rlang::sym(response)
 
-                     purrr::map_dfr(.x = expl_cols,
-                     .id = "explanatory",
-                     .f = function(explanatory) {
-
-                       expl_col <- rlang::sym(explanatory)
-
-                       if(test == "t-test two-sample") {
-                         infer::t_test(x = x,
-                                       response = !!resp_col,
-                                       explanatory = !!expl_col,
-                                       order = order,
-                                       alternative = alternative,
-                                       mu = mu,
-                                       conf_int = conf_int,
-                                       conf_level = conf_level)
+                     if(length(expl_cols) == 0L) {
+                       if(test == "t") {
+                       cbind(infer::t_test(x = x,
+                                     response = !!resp_col,
+                                     order = order,
+                                     alternative = alternative,
+                                     mu = mu,
+                                     conf_int = conf_int,
+                                     conf_level = conf_level),
+                             tibble::tibble(mu = mu))
                        } else if(test == "chisq") {
                          infer::chisq_test(x = x,
-                                       response = !!resp_col,
-                                       explanatory = !!expl_col,
-                                       correct = correct,
-                                       p = p)
-                       } else if(test == "prop") {
-                         infer::prop_test(x = x,
-                                          response = !!resp_col,
-                                          explanatory = !!expl_col,
-                                          order = order,
-                                          alternative = alternative,
-                                          p = p,
-                                          success = success,
-                                          correct = correct,
-                                          z = z,
-                                          conf_int = conf_int,
-                                          conf_level = conf_level)
+                                           response = !!resp_col,
+                                           correct = correct,
+                                           p = p)
                        }
+                     } else {
+                       purrr::map_dfr(.x = expl_cols,
+                                      .id = "explanatory",
+                                      .f = function(explanatory) {
 
+                                        expl_col <- rlang::sym(explanatory)
 
-          })
-      })
+                                        if(test == "t") {
+                                          infer::t_test(x = x,
+                                                        response = !!resp_col,
+                                                        explanatory = !!expl_col,
+                                                        order = order,
+                                                        alternative = alternative,
+                                                        mu = mu,
+                                                        conf_int = conf_int,
+                                                        conf_level = conf_level)
+                                        } else if(test == "chisq") {
+                                          infer::chisq_test(x = x,
+                                                            response = !!resp_col,
+                                                            explanatory = !!expl_col,
+                                                            correct = correct,
+                                                            p = p)
+                                        } else if(test == "prop") {
+                                          infer::prop_test(x = x,
+                                                           response = !!resp_col,
+                                                           explanatory = !!expl_col,
+                                                           order = order,
+                                                           alternative = alternative,
+                                                           p = p,
+                                                           success = success,
+                                                           correct = correct,
+                                                           z = z,
+                                                           conf_int = conf_int,
+                                                           conf_level = conf_level)
+                                        }
+                                      })
+                     }
+                   })
   }
