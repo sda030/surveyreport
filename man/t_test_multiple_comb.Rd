@@ -13,7 +13,8 @@ t_test_multiple_comb(
   alternative = "two-sided",
   mu = 0,
   conf_int = TRUE,
-  conf_level = 0.95
+  conf_level = 0.95,
+  test = c("t-test two-sample", "chi-square", "prop")
 )
 }
 \arguments{
