@@ -63,7 +63,7 @@ test_multiple_comb <-
                      if(length(expl_cols) == 0L) {
                        if(test == "t") {
                          means <- dplyr::summarize(x,
-                                                   !!resp_col := mean(!!resp_col, na.rm=TRUE),
+                                                   mean := mean(!!resp_col, na.rm=TRUE),
                                                    mu = mu)
                          dplyr::bind_cols(
                            infer::t_test(x = x,
