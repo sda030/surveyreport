@@ -95,7 +95,7 @@ test_multiple_comb <-
                                           means <- tidyr::pivot_wider(means,
                                                                       names_from = !!expl_col,
                                                                       values_from = c(mean, n))
-                                          print(means)
+
                                           dplyr::bind_cols(
                                           infer::t_test(x = x,
                                                         response = !!resp_col,
