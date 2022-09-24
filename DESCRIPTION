@@ -24,6 +24,7 @@ Imports:
     dplyr,
     labelled,
     infer,
+    janitor,
     mschart,
     officer,
     purrr,
