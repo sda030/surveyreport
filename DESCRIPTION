@@ -1,7 +1,7 @@
 Type: Package
 Package: surveyreport
 Title: Automatic Reports in Office Format Based on Tidy Specifications
-Version: 0.0.1.9009
+Version: 0.0.1.9012
 Authors@R: 
     person(given = "Stephan", 
            family = "Daus", 
@@ -16,7 +16,7 @@ License: MIT + file LICENSE
 URL: https://github.com/sda030/surveyreport
 BugReports: https://github.com/sda030/surveyreport/issues
 Depends:
-    R (>= 3.5.0)
+    R (>= 4.0.0)
 Imports: 
     cli,
     checkmate,
