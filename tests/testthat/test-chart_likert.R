@@ -38,6 +38,12 @@ test_that("report_chart_likert errors", {
     officer:::print.rdocx(test_docx_a19, target = "test_docx_a19.docx")
     file.remove("test_docx_a19.docx")
 
+    test_docx_a19_no_NA <-
+      ex_survey1 %>%
+      report_chart_likert(cols = a_1:a_9, showNA = "no")
+    officer:::print.rdocx(test_docx_a19_no_NA, target = "test_docx_a19_no_NA.docx")
+    file.remove("test_docx_a19_no_NA.docx")
+
     test_docx_p14_p4NA <-
       ex_survey1 %>%
       mutate(across(p_4, ~forcats::fct_recode(.x, NULL = "Strongly disagree"))) %>%

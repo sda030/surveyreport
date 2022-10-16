@@ -97,6 +97,7 @@ create_chart_likert <-
 #'
 #' @param data Data frame or tibble.
 #' @param cols <tidy-select> Columns to select for reporting.
+#' @param showNA Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).
 #' @param docx_template  [\code{character(1) || officer::read_docx()}]\cr
 #' Either a filepath to a template file, or a rdocx-object.
 #' @param label_font_size [\code{integer(1)}]\cr Font size for data labels
@@ -153,6 +154,7 @@ create_chart_likert <-
 report_chart_likert <-
 	function(data,
 			 cols = everything(),
+			 showNA = "ifany",
 			 docx_template = NULL,
 			 label_font_size = 8,
 			 colour_palette = NULL,
@@ -189,7 +191,7 @@ report_chart_likert <-
 
 
 
-		data <- prepare_data_for_mschart(data[, cols_pos])
+		data <- prepare_data_for_mschart(data[, cols_pos], showNA = showNA)
 
 		chart <-
 		  create_chart_likert(data = data,
@@ -217,11 +219,16 @@ report_chart_likert <-
 #' Helper Function to Prepare Data for create_chart_likert
 #'
 #' @param data Dataset
+#' @param showNA Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).
+#' @param call Error call function, usually not needed.
+#' @importFrom crosstable crosstable
+#' @importFrom rlang arg_match caller_env
 #'
 #' @return Dataset
 prepare_data_for_mschart <-
-  function(data) {
-    data <- crosstable(data = data, percent_pattern = "{n}")
+  function(data, showNA = "ifany", call = rlang::caller_env()) {
+    rlang::arg_match(showNA, values = c("ifany", "always", "no"), multiple = FALSE, error_call = call)
+    data <- crosstable::crosstable(data = data, percent_pattern = "{n}", showNA = showNA)
 
     data <- as.data.frame(data)
     data$value <- as.integer(data$value)

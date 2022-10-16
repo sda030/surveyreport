@@ -7,6 +7,7 @@
 report_chart_likert(
   data,
   cols = everything(),
+  showNA = "ifany",
   docx_template = NULL,
   label_font_size = 8,
   colour_palette = NULL,
@@ -22,6 +23,8 @@ report_chart_likert(
 \item{data}{Data frame or tibble.}
 
 \item{cols}{<tidy-select> Columns to select for reporting.}
+
+\item{showNA}{Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).}
 
 \item{docx_template}{[\code{character(1) || officer::read_docx()}]\cr
 Either a filepath to a template file, or a rdocx-object.}

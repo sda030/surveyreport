@@ -4,10 +4,14 @@
 \alias{prepare_data_for_mschart}
 \title{Helper Function to Prepare Data for create_chart_likert}
 \usage{
-prepare_data_for_mschart(data)
+prepare_data_for_mschart(data, showNA = "ifany", call = rlang::caller_env())
 }
 \arguments{
 \item{data}{Dataset}
+
+\item{showNA}{Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).}
+
+\item{call}{Error call function, usually not needed.}
 }
 \value{
 Dataset
