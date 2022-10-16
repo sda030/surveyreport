@@ -63,7 +63,7 @@ test_multiple_comb <-
                      if(length(expl_cols) == 0L) {
                        if(test == "t") {
                          means <- dplyr::summarize(x,
-                                                   mean := mean(!!resp_col, na.rm=TRUE),
+                                                   mean = mean(!!resp_col, na.rm=TRUE),
                                                    mu = mu)
                          dplyr::bind_cols(
                            infer::t_test(x = x,
@@ -90,7 +90,7 @@ test_multiple_comb <-
                                         if(test == "t") {
                                           means <- dplyr::group_by(x, !!expl_col)
                                           means <- dplyr::summarize(means,
-                                                                    mean := mean(!!resp_col, na.rm=TRUE),
+                                                                    mean = mean(!!resp_col, na.rm=TRUE),
                                                                     n = dplyr::n())
                                           means <- tidyr::pivot_wider(means,
                                                                       names_from = !!expl_col,

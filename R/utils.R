@@ -483,10 +483,9 @@ check_category_pairs <-
                    purrr::walk2(.x = unname(cols_rest),
                                 .y = names(cols_rest),
                                 .f = function(x2, y2) {
-                                  common <-
-                                    dplyr::intersect(
-                                      levels(data[[y]]),
-                                      levels(data[[y2]]))
+                                  val_y <- if(is.factor(data[[y]])) levels(data[[y]]) else unique(data[[y]])
+                                  val_y2 <- if(is.factor(data[[y2]])) levels(data[[y2]]) else unique(data[[y2]])
+                                  common <- dplyr::intersect(val_y, val_y2)
                                   if(length(common) == 0L) {
                                     cli::cli_abort(
                                       c("Unequal variables.",

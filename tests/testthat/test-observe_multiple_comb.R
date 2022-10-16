@@ -8,7 +8,7 @@ testthat::test_that("test_multiple_comb t_test one-sample mtcars", {
                        conf_level = .95,
                        test = "t"
     )
-  testthat::expect_equal(dim(x), c(2, 11))
+  testthat::expect_equal(dim(x), c(2, 10))
   testthat::expect_equal(as.numeric(x[2,2]), 10.5306904)
 })
 
