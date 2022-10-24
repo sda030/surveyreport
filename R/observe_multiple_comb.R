@@ -46,34 +46,46 @@ test_multiple_comb <-
     explanatory_cols <- tidyselect::eval_select(rlang::enquo(explanatory), x)
 
     x <-
-      dplyr::mutate(x, across(c({{response}}, {{explanatory}}),
-                              ~labelled::remove_val_labels(.x)))
+      dplyr::mutate(x,
+                    across(c({{response}}, {{explanatory}}),
+                              ~labelled::remove_val_labels(.x)),
+                    across(c({{response}}, {{explanatory}}),
+                           ~droplevels(.x)))
 
     resp_cols <- names(response_cols)
     resp_cols <- rlang::set_names(resp_cols)
     expl_cols <- names(explanatory_cols)
     expl_cols <- rlang::set_names(expl_cols)
 
-    purrr::map_dfr(.x = resp_cols,
+    cli::cli_progress_bar("Computing tests", total = length(resp_cols))
+
+    out <-
+      purrr::map_dfr(.x = resp_cols,
                    .id = "response",
                    .f = function(response) {
+                     cli::cli_progress_update(.envir = rlang::env_parent())
+
 
                      resp_col <- rlang::sym(response)
 
                      if(length(expl_cols) == 0L) {
+
                        if(test == "t") {
+
                          means <- dplyr::summarize(x,
                                                    mean = mean(!!resp_col, na.rm=TRUE),
                                                    mu = mu)
-                         dplyr::bind_cols(
+                         res_test <-
                            infer::t_test(x = x,
-                                     response = !!resp_col,
-                                     order = order,
-                                     alternative = alternative,
-                                     mu = mu,
-                                     conf_int = conf_int,
-                                     conf_level = conf_level),
-                           means)
+                                         response = !!resp_col,
+                                         order = order,
+                                         alternative = alternative,
+                                         mu = mu,
+                                         conf_int = conf_int,
+                                         conf_level = conf_level)
+                         dplyr::bind_cols(res_test, means)
+
+
                        } else if(test == "chisq") {
                          infer::chisq_test(x = x,
                                            response = !!resp_col,
@@ -85,9 +97,14 @@ test_multiple_comb <-
                                       .id = "explanatory",
                                       .f = function(explanatory) {
 
+                                        # cli::cli_progress_update(.envir = rlang::env_parent(env = n = 1))
+
                                         expl_col <- rlang::sym(explanatory)
 
                                         if(test == "t") {
+
+
+
                                           means <- dplyr::group_by(x, !!expl_col)
                                           means <- dplyr::summarize(means,
                                                                     mean = mean(!!resp_col, na.rm=TRUE),
@@ -96,23 +113,43 @@ test_multiple_comb <-
                                                                       names_from = !!expl_col,
                                                                       values_from = c(mean, n))
 
-                                          dplyr::bind_cols(
-                                          infer::t_test(x = x,
-                                                        response = !!resp_col,
-                                                        explanatory = !!expl_col,
-                                                        order = order,
-                                                        alternative = alternative,
-                                                        mu = mu,
-                                                        conf_int = conf_int,
-                                                        conf_level = conf_level),
-                                          means)
+                                          res_test <-
+                                            infer::t_test(x = x,
+                                                          response = !!resp_col,
+                                                          explanatory = !!expl_col,
+                                                          order = order,
+                                                          alternative = alternative,
+                                                          mu = mu,
+                                                          conf_int = conf_int,
+                                                          conf_level = conf_level)
+                                          dplyr::bind_cols(res_test, means)
+
+
+
 
                                         } else if(test == "chisq") {
+
+                                          miss <- dplyr::filter(x, !is.na(!!resp_col), !is.na(!!expl_col))
+                                          if(nrow(miss)>3 &&
+                                             dplyr::n_distinct(x[[response]]) >= 2 &&
+                                             dplyr::n_distinct(x[[explanatory]]) >= 2) {
+                                            tryCatch(
                                           infer::chisq_test(x = x,
                                                             response = !!resp_col,
                                                             explanatory = !!expl_col,
                                                             correct = correct,
-                                                            p = p)
+                                                            p = p),
+                                          error = function(e) {
+
+                                            cli::cli_warn("Bivariate cells are all zero: {{response}} by {{explanatory}}. Dropping chisq-test.")
+                                          return(NULL)
+                                          })
+                                          } else {
+                                            cli::cli_warn("Bivariate cells are all zero: {{response}} by {{explanatory}}. Dropping chisq-test.")
+                                            NULL
+                                          }
+
+
                                         } else if(test == "prop") {
                                           infer::prop_test(x = x,
                                                            response = !!resp_col,
@@ -129,4 +166,6 @@ test_multiple_comb <-
                                       })
                      }
                    })
+    cli::cli_progress_done()
+    out
   }
