@@ -85,7 +85,8 @@ testthat::test_that("test_multiple_comb two-sample chisq mtcars", {
                        alternative = "two-sided",
                        conf_level = .95,
                        test = "chisq"
-    )
+    ) %>%
+    suppressWarnings()
   testthat::expect_equal(dim(x), c(2, 5))
 })
 

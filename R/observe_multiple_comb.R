@@ -50,7 +50,7 @@ test_multiple_comb <-
                     across(c({{response}}, {{explanatory}}),
                               ~labelled::remove_val_labels(.x)),
                     across(c({{response}}, {{explanatory}}),
-                           ~droplevels(.x)))
+                           ~if(is.factor(.x)) droplevels(.x) else .x))
 
     resp_cols <- names(response_cols)
     resp_cols <- rlang::set_names(resp_cols)
