@@ -12,6 +12,7 @@ create_chart_likert(
   labels = "data_label",
   label_font_size = 10,
   main_font_size = 8,
+  font_family = "Calibri",
   colour_palette = NULL,
   colour_na = "gray90",
   seed = 1
@@ -32,6 +33,8 @@ create_chart_likert(
 
 \item{main_font_size}{[\code{integer(1)}]\cr Font size for all other text
 Must contain at least the number of unique values (excl. missing) in the data set.}
+
+\item{font_family}{Word font family. See officer::fp_text}
 
 \item{colour_palette}{[\code{character()}]\cr
 Must contain at least the number of unique values (incl. missing) in the data set.}

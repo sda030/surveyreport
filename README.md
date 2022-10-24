@@ -1,23 +1,13 @@
----
-output: github_document
----
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>",
-  fig.path = "man/figures/README-",
-  out.width = "100%"
-)
-```
-
 # surveyreport: Automatic Reports in Office Format Based on Tidy Specifications
+
 <!-- badges: start -->
 <!-- badges: end -->
 
- Produces highly customizable figures, text, analyses and reports for a batch of possible dpendent-independent relations of possible interest.
+Produces highly customizable figures, text, analyses and reports for a
+batch of possible dpendent-independent relations of possible interest.
 
 ## Installation
 

@@ -1,3 +1,16 @@
+test_that("prepare_data_for_mschart", {
+  testthat::expect_equal(surveyreport:::prepare_data_for_mschart(
+    data = ex_survey1[, paste0("a_", 1:9)],
+    digits = 0, percent = F)[1,"data_label"],
+    "49")
+
+  # testthat::expect_equal(
+    surveyreport:::prepare_data_for_mschart(
+    data = ex_survey1[, paste0("a_", 1:9)],
+    sort_col = "value", desc = T
+    ) |> View(title = "x")
+})
+
 test_that("report_chart_likert errors", {
   library(dplyr)
   library(labelled)
@@ -85,6 +98,18 @@ test_that("report_chart_likert errors", {
     file.remove("test_docx_p14_p1NA2.docx")
 
 
+    test_docx_a19_sporring <-
+      ex_survey1 %>%
+      report_chart_likert(cols = a_1:a_9, digits = 0L, percent = FALSE, font_family = "Calibri")
+    officer:::print.rdocx(test_docx_a19_sporring, target = "test_docx_a19_sporring.docx")
+    file.remove("test_docx_a19_sporring.docx")
+
+
+    test_docx_a19_value_sort <-
+      ex_survey1 %>%
+      report_chart_likert(cols = b_1:b_3, sort_col = "value", desc=T)
+    officer:::print.rdocx(test_docx_a19_value_sort, target = "test_docx_a19_value_sort.docx")
+    file.remove("test_docx_a19_value_sort.docx")
   # testthat::expect_output_file(object =
   #                                officer:::print.rdocx(test_docx8, target = "test8.docx"),
   # file = system.file("template","test8.docx", package = "surveyreport", mustWork = TRUE))

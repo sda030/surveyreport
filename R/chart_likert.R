@@ -11,7 +11,9 @@
 #' @param colour_palette [\code{character()}]\cr
 #' Must contain at least the number of unique values (incl. missing) in the data set.
 #' @param colour_na [\code{character(1)}]\cr Colour as a single string.
+#' @param font_family Word font family. See officer::fp_text
 #' @param seed Optional random seed for selection of colours in blender.
+#'
 #' @importFrom crosstable crosstable
 #'
 #' @return mschart-object. Can be added to an rdocx, rpptx or rxlsx object.
@@ -23,6 +25,7 @@ create_chart_likert <-
            y="value", x="label", group="variable", labels="data_label",
            label_font_size = 10,
            main_font_size = 8,
+           font_family = "Calibri",
            colour_palette = NULL,
            colour_na = "gray90",
            seed=1) {
@@ -62,13 +65,14 @@ create_chart_likert <-
     fp_text_settings <-
       lapply(colour_palette,
              function(color) {
-               officer::fp_text(font.size=label_font_size, color=hex_bw(color))
+               officer::fp_text(font.size=label_font_size, color=hex_bw(color),
+                                font.family = font_family)
              })
     fp_text_settings <- fp_text_settings[seq_len(dplyr::n_distinct(data[[group]]))]
 
     blank_border <- officer::fp_border(style = "none")
 
-    main_text <- officer::fp_text(font.size = main_font_size)
+    main_text <- officer::fp_text(font.size = main_font_size, font.family = font_family)
 
     m <- mschart::ms_barchart(data = data,
                               y = y, x = x, group = group, labels = labels)
@@ -109,7 +113,13 @@ create_chart_likert <-
 #' Which template style to be used for formatting chart?
 #' @param height_per_col [\code{numeric(1)>0}]\cr Height in cm per chart entry.
 #' @param height_fixed [\code{numeric(1)>0}]\cr Fixed height in cm.
+#' @param digits Number of decimal places as integer.
+#' @param percent Logical, whether to include percentage symbol on chart.
+#' @param sort_col String, sort by value or label?
+#' @param desc Loical, sort in descending order?
+#' @param font_family Office font family. Defaults to "Arial". See ?officer::fp_text() for options.
 #' @param seed Optional random seed for selection of colours in blender.
+#'
 #' @importFrom crosstable crosstable
 #' @importFrom tidyselect everything
 #' @importFrom stats ave
@@ -160,9 +170,14 @@ report_chart_likert <-
 			 colour_palette = NULL,
 			 colour_na = "gray90",
 			 chart_formatting = NULL,
+			 digits = 1,
+			 percent = TRUE,
+			 sort_col = NULL,
+			 desc = FALSE,
 			 height_per_col = .3,
 			 height_fixed = 1,
-			 main_font_size = 8,
+			 main_font_size = 9,
+			 font_family = "Calibri",
 			 seed = 1) {
 
 	  if(!inherits(data, what = "data.frame")) {
@@ -171,7 +186,6 @@ report_chart_likert <-
 
 		cols_enq <- rlang::enquo(cols)
 		cols_pos <- tidyselect::eval_select(cols_enq, data = data)
-
 
 		check_category_pairs(data = data, cols_pos = cols_pos)
 
@@ -191,7 +205,12 @@ report_chart_likert <-
 
 
 
-		data <- prepare_data_for_mschart(data[, cols_pos], showNA = showNA)
+		data <- prepare_data_for_mschart(data[, cols_pos],
+		                                 showNA = showNA,
+		                                 percent = percent,
+		                                 digits = digits,
+		                                 sort_col = sort_col,
+		                                 desc = desc)
 
 		chart <-
 		  create_chart_likert(data = data,
@@ -199,6 +218,7 @@ report_chart_likert <-
 		                      colour_palette = colour_palette,
 		                      colour_na = colour_na,
 		                      main_font_size = main_font_size,
+		                      font_family = font_family,
 		                      seed = seed)
 
 		determine_height <-
@@ -220,26 +240,52 @@ report_chart_likert <-
 #'
 #' @param data Dataset
 #' @param showNA Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).
+#' @param digits Number of decimal places as integer.
+#' @param percent Logical, whether to include percentage symbol on chart.
+#' @param sort_col <data-masking> Column to sort by
 #' @param call Error call function, usually not needed.
+#'
 #' @importFrom crosstable crosstable
-#' @importFrom rlang arg_match caller_env
+#' @importFrom rlang arg_match caller_env is_integerish
+#' @importFrom cli cli_abort
+#' @importFrom dplyr arrange desc
 #'
 #' @return Dataset
 prepare_data_for_mschart <-
-  function(data, showNA = "ifany", call = rlang::caller_env()) {
+  function(data,
+           showNA = "ifany",
+           call = rlang::caller_env(),
+           digits = 1,
+           percent = TRUE,
+           sort_col = NULL,
+           desc = FALSE) {
     rlang::arg_match(showNA, values = c("ifany", "always", "no"), multiple = FALSE, error_call = call)
-    data <- crosstable::crosstable(data = data, percent_pattern = "{n}", showNA = showNA)
+    if(!rlang::is_integerish(digits)) cli::cli_abort("{.arg digits} must be {.cls {integer(1)}}.")
+    data <- crosstable::crosstable(data = data, percent_pattern = "{n}", showNA = showNA,
+                                   label = TRUE)
 
     data <- as.data.frame(data)
     data$value <- as.integer(data$value)
-    data$data_label <- ave(x = data$value, data$label,
-                                    FUN = function(x) sprintf("%.1f%%", x/sum(x, na.rm = T)*100))
+    data$data_label <-
+      ave(x = data$value,
+          data$label,
+          FUN = function(x) sprintf(fmt = paste0("%.",
+                                                 digits,
+                                                 "f",
+                                                 if(percent) "%%"),
+                                    x/sum(x, na.rm = T)*100))
     data$n_unique <- ave(x = data$variable, data$label,
-                                  FUN = function(x) length(unique(x)))
+                         FUN = function(x) length(unique(x)))
     fct_max <- max(data$n_unique, na.rm = TRUE)
     fct_uniques <- unique(data[data$n_unique == fct_max, "variable"])
 
     data$n_unique <- NULL
     data$variable <- factor(data$variable, levels = fct_uniques)
+    if(!is.null(sort_col)) {
+      data <-
+        dplyr::arrange(data, variable,
+                       if(desc) dplyr::desc(.data[[sort_col]]) else .data[[sort_col]])
+    }
+    data$label <- factor(data$label, levels = unique(as.character(data$label)), ordered = TRUE)
     data
   }

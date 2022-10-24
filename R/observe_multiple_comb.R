@@ -45,12 +45,14 @@ test_multiple_comb <-
 
     explanatory_cols <- tidyselect::eval_select(rlang::enquo(explanatory), x)
 
+
+
     x <-
       dplyr::mutate(x,
                     across(c({{response}}, {{explanatory}}),
-                              ~labelled::remove_val_labels(.x)),
+                           ~labelled::remove_val_labels(.x)),
                     across(c({{response}}, {{explanatory}}),
-                           ~if(is.factor(.x)) droplevels(.x) else .x))
+                           ~{if(is.factor(.x)) droplevels(.x) else .x}))
 
     resp_cols <- names(response_cols)
     resp_cols <- rlang::set_names(resp_cols)

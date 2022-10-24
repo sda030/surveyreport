@@ -13,9 +13,13 @@ report_chart_likert(
   colour_palette = NULL,
   colour_na = "gray90",
   chart_formatting = NULL,
+  digits = 1,
+  percent = TRUE,
+  sort_col = NULL,
   height_per_col = 0.3,
   height_fixed = 1,
-  main_font_size = 8,
+  main_font_size = 9,
+  font_family = "Calibri",
   seed = 1
 )
 }
@@ -39,11 +43,19 @@ Must contain at least the number of unique values (incl. missing) in the data se
 \item{chart_formatting}{[\code{integer(1)}]\cr
 Which template style to be used for formatting chart?}
 
+\item{digits}{Number of decimal places as integer.}
+
+\item{percent}{Logical, whether to include percentage symbol on chart.}
+
+\item{sort_col}{<data-masking> Column to sort by}
+
 \item{height_per_col}{[\code{numeric(1)>0}]\cr Height in cm per chart entry.}
 
 \item{height_fixed}{[\code{numeric(1)>0}]\cr Fixed height in cm.}
 
 \item{main_font_size}{[\code{integer(1)}]\cr Font size for all other text}
+
+\item{font_family}{Office font family. Defaults to "Arial". See ?officer::fp_text() for options.}
 
 \item{seed}{Optional random seed for selection of colours in blender.}
 }

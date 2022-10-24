@@ -4,7 +4,14 @@
 \alias{prepare_data_for_mschart}
 \title{Helper Function to Prepare Data for create_chart_likert}
 \usage{
-prepare_data_for_mschart(data, showNA = "ifany", call = rlang::caller_env())
+prepare_data_for_mschart(
+  data,
+  showNA = "ifany",
+  call = rlang::caller_env(),
+  digits = 1,
+  percent = TRUE,
+  sort_col = NULL
+)
 }
 \arguments{
 \item{data}{Dataset}
@@ -12,6 +19,12 @@ prepare_data_for_mschart(data, showNA = "ifany", call = rlang::caller_env())
 \item{showNA}{Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).}
 
 \item{call}{Error call function, usually not needed.}
+
+\item{digits}{Number of decimal places as integer.}
+
+\item{percent}{Logical, whether to include percentage symbol on chart.}
+
+\item{sort_col}{<data-masking> Column to sort by}
 }
 \value{
 Dataset
