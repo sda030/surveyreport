@@ -11,7 +11,9 @@
 #' @param colour_palette [\code{character()}]\cr
 #' Must contain at least the number of unique values (incl. missing) in the data set.
 #' @param colour_na [\code{character(1)}]\cr Colour as a single string.
+#' @param colour_2nd_binary_cat [\code{character(1)}]\cr Colour for second category in binary variables. Often useful to hide this.
 #' @param font_family Word font family. See officer::fp_text
+#' @param vertical Logical. If FALSE (default), then horizontal.
 #' @param seed Optional random seed for selection of colours in blender.
 #'
 #' @importFrom crosstable crosstable
@@ -28,7 +30,9 @@ create_chart_likert <-
            font_family = "Calibri",
            colour_palette = NULL,
            colour_na = "gray90",
-           seed=1) {
+           colour_2nd_binary_cat = "#ffffff",
+           vertical = FALSE,
+           seed = 1) {
 
     coll <- checkmate::makeAssertCollection()
     checkmate::assert_string(y, add = coll)
@@ -41,12 +45,14 @@ create_chart_likert <-
     checkmate::assert_number(main_font_size, lower = 0, upper = 72, finite = TRUE, add = coll)
     checkmate::assert_number(seed, lower = 1, finite = TRUE, add = coll)
     checkmate::assert_data_frame(data, add = coll)
+    checkmate::assert_logical(vertical, len = 1, any.missing = FALSE, add = coll)
     checkmate::assert_subset(x = colnames(data), choices = c(y,x,group,labels, ".id"), add = coll)
     if(!is.null(colour_palette) & !all(is_colour(colour_palette))) {
       cli::cli_abort(
         c("Invalid user-specified colours.",
           i="{.arg colour_palette} must be a character vector of valid colours in hex-format (e.g. #000000)."))
     }
+
     checkmate::reportAssertions(coll)
 
     colour_palette <-
@@ -61,6 +67,13 @@ create_chart_likert <-
       colour_palette[names(colour_palette)=="NA"] <- colour_na
     }
 
+    if(length(levels(data[[group]]))==2L &&
+       !is.null(colour_2nd_binary_cat)
+       && is_colour(colour_2nd_binary_cat)) {
+      colour_palette[2] <- colour_2nd_binary_cat
+    }
+
+
 
     fp_text_settings <-
       lapply(colour_palette,
@@ -74,9 +87,9 @@ create_chart_likert <-
 
     main_text <- officer::fp_text(font.size = main_font_size, font.family = font_family)
 
-    m <- mschart::ms_barchart(data = data,
-                              y = y, x = x, group = group, labels = labels)
-    m <- mschart::as_bar_stack(x = m, dir = "horizontal", percent = T)
+    m <- mschart::ms_barchart(data = data, y = y, x = x,
+                              group = group, labels = labels)
+    m <- mschart::as_bar_stack(x = m, dir = if(vertical) "vertical" else "horizontal", percent = T)
     m <- mschart::chart_data_fill(x = m, values = colour_palette)
     m <- mschart::chart_data_stroke(x = m, values = colour_palette)
     m <- mschart::chart_labels_text(x = m, values = fp_text_settings)
@@ -106,9 +119,11 @@ create_chart_likert <-
 #' Either a filepath to a template file, or a rdocx-object.
 #' @param label_font_size [\code{integer(1)}]\cr Font size for data labels
 #' @param main_font_size [\code{integer(1)}]\cr Font size for all other text
+#' @param font_family Office font family. Defaults to "Arial". See ?officer::fp_text() for options.
 #' @param colour_palette [\code{character()}]\cr
 #' Must contain at least the number of unique values (incl. missing) in the data set.
-#' @param colour_na [\code{character(1)}]\cr Colour as a single string.
+#' @param colour_na [\code{character(1)}]\cr Colour as a single string, for NA-values.
+#' @param colour_2nd_binary_cat [\code{character(1)}]\cr Colour for second category in binary variables. Often useful to hide this.
 #' @param chart_formatting [\code{integer(1)}]\cr
 #' Which template style to be used for formatting chart?
 #' @param height_per_col [\code{numeric(1)>0}]\cr Height in cm per chart entry.
@@ -117,7 +132,7 @@ create_chart_likert <-
 #' @param percent Logical, whether to include percentage symbol on chart.
 #' @param sort_col String, sort by value or label?
 #' @param desc Loical, sort in descending order?
-#' @param font_family Office font family. Defaults to "Arial". See ?officer::fp_text() for options.
+#' @param vertical Logical. If FALSE (default), then horizontal.
 #' @param seed Optional random seed for selection of colours in blender.
 #'
 #' @importFrom crosstable crosstable
@@ -167,17 +182,19 @@ report_chart_likert <-
 			 showNA = "ifany",
 			 docx_template = NULL,
 			 label_font_size = 8,
+			 main_font_size = 9,
+			 font_family = "Calibri",
 			 colour_palette = NULL,
 			 colour_na = "gray90",
+			 colour_2nd_binary_cat = "#ffffff",
+			 height_per_col = .3,
+			 height_fixed = 1,
 			 chart_formatting = NULL,
 			 digits = 1,
 			 percent = TRUE,
 			 sort_col = NULL,
+			 vertical = FALSE,
 			 desc = FALSE,
-			 height_per_col = .3,
-			 height_fixed = 1,
-			 main_font_size = 9,
-			 font_family = "Calibri",
 			 seed = 1) {
 
 	  if(!inherits(data, what = "data.frame")) {
@@ -215,10 +232,12 @@ report_chart_likert <-
 		chart <-
 		  create_chart_likert(data = data,
 		                      label_font_size = label_font_size,
+		                      main_font_size = main_font_size,
 		                      colour_palette = colour_palette,
 		                      colour_na = colour_na,
-		                      main_font_size = main_font_size,
+		                      colour_2nd_binary_cat = colour_2nd_binary_cat,
 		                      font_family = font_family,
+		                      vertical = vertical,
 		                      seed = seed)
 
 		determine_height <-
@@ -242,7 +261,8 @@ report_chart_likert <-
 #' @param showNA Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).
 #' @param digits Number of decimal places as integer.
 #' @param percent Logical, whether to include percentage symbol on chart.
-#' @param sort_col <data-masking> Column to sort by
+#' @param sort_col String, sort by either "value", "label", ".id" (variable name) or NULL (default).
+#' @param desc Reverse sorting of sort_col
 #' @param call Error call function, usually not needed.
 #'
 #' @importFrom crosstable crosstable
@@ -283,9 +303,12 @@ prepare_data_for_mschart <-
     data$variable <- factor(data$variable, levels = fct_uniques)
     if(!is.null(sort_col)) {
       data <-
-        dplyr::arrange(data, variable,
+        dplyr::arrange(data,
+                       .data$variable,
                        if(desc) dplyr::desc(.data[[sort_col]]) else .data[[sort_col]])
     }
-    data$label <- factor(data$label, levels = unique(as.character(data$label)), ordered = TRUE)
+    data$label <- factor(data$label,
+                         levels = unique(as.character(data$label)),
+                         ordered = TRUE)
     data
   }

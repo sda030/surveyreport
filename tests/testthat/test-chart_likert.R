@@ -4,11 +4,11 @@ test_that("prepare_data_for_mschart", {
     digits = 0, percent = F)[1,"data_label"],
     "49")
 
-  # testthat::expect_equal(
+  testthat::expect_equal(
     surveyreport:::prepare_data_for_mschart(
     data = ex_survey1[, paste0("a_", 1:9)],
-    sort_col = "value", desc = T
-    ) |> View(title = "x")
+    sort_col = "value", desc = T)[1,4],
+    expected = 60)
 })
 
 test_that("report_chart_likert errors", {
@@ -107,7 +107,7 @@ test_that("report_chart_likert errors", {
 
     test_docx_a19_value_sort <-
       ex_survey1 %>%
-      report_chart_likert(cols = b_1:b_3, sort_col = "value", desc=T)
+      report_chart_likert(cols = a_1:a_9, sort_col = "value", desc=F, vertical=F, showNA = "no")
     officer:::print.rdocx(test_docx_a19_value_sort, target = "test_docx_a19_value_sort.docx")
     file.remove("test_docx_a19_value_sort.docx")
   # testthat::expect_output_file(object =

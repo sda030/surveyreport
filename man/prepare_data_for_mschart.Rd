@@ -10,7 +10,8 @@ prepare_data_for_mschart(
   call = rlang::caller_env(),
   digits = 1,
   percent = TRUE,
-  sort_col = NULL
+  sort_col = NULL,
+  desc = FALSE
 )
 }
 \arguments{
@@ -24,7 +25,9 @@ prepare_data_for_mschart(
 
 \item{percent}{Logical, whether to include percentage symbol on chart.}
 
-\item{sort_col}{<data-masking> Column to sort by}
+\item{sort_col}{String, sort by either "value", "label", ".id" (variable name) or NULL (default).}
+
+\item{desc}{Reverse sorting of sort_col}
 }
 \value{
 Dataset

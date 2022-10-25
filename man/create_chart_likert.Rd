@@ -15,6 +15,8 @@ create_chart_likert(
   font_family = "Calibri",
   colour_palette = NULL,
   colour_na = "gray90",
+  colour_2nd_binary_cat = "#ffffff",
+  vertical = FALSE,
   seed = 1
 )
 }
@@ -40,6 +42,10 @@ Must contain at least the number of unique values (excl. missing) in the data se
 Must contain at least the number of unique values (incl. missing) in the data set.}
 
 \item{colour_na}{[\code{character(1)}]\cr Colour as a single string.}
+
+\item{colour_2nd_binary_cat}{[\code{character(1)}]\cr Colour for second category in binary variables. Often useful to hide this.}
+
+\item{vertical}{Logical. If FALSE (default), then horizontal.}
 
 \item{seed}{Optional random seed for selection of colours in blender.}
 }

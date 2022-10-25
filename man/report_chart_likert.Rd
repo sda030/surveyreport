@@ -10,16 +10,19 @@ report_chart_likert(
   showNA = "ifany",
   docx_template = NULL,
   label_font_size = 8,
+  main_font_size = 9,
+  font_family = "Calibri",
   colour_palette = NULL,
   colour_na = "gray90",
+  colour_2nd_binary_cat = "#ffffff",
+  height_per_col = 0.3,
+  height_fixed = 1,
   chart_formatting = NULL,
   digits = 1,
   percent = TRUE,
   sort_col = NULL,
-  height_per_col = 0.3,
-  height_fixed = 1,
-  main_font_size = 9,
-  font_family = "Calibri",
+  vertical = FALSE,
+  desc = FALSE,
   seed = 1
 )
 }
@@ -35,10 +38,20 @@ Either a filepath to a template file, or a rdocx-object.}
 
 \item{label_font_size}{[\code{integer(1)}]\cr Font size for data labels}
 
+\item{main_font_size}{[\code{integer(1)}]\cr Font size for all other text}
+
+\item{font_family}{Office font family. Defaults to "Arial". See ?officer::fp_text() for options.}
+
 \item{colour_palette}{[\code{character()}]\cr
 Must contain at least the number of unique values (incl. missing) in the data set.}
 
-\item{colour_na}{[\code{character(1)}]\cr Colour as a single string.}
+\item{colour_na}{[\code{character(1)}]\cr Colour as a single string, for NA-values.}
+
+\item{colour_2nd_binary_cat}{[\code{character(1)}]\cr Colour for second category in binary variables. Often useful to hide this.}
+
+\item{height_per_col}{[\code{numeric(1)>0}]\cr Height in cm per chart entry.}
+
+\item{height_fixed}{[\code{numeric(1)>0}]\cr Fixed height in cm.}
 
 \item{chart_formatting}{[\code{integer(1)}]\cr
 Which template style to be used for formatting chart?}
@@ -47,15 +60,11 @@ Which template style to be used for formatting chart?}
 
 \item{percent}{Logical, whether to include percentage symbol on chart.}
 
-\item{sort_col}{<data-masking> Column to sort by}
+\item{sort_col}{String, sort by value or label?}
 
-\item{height_per_col}{[\code{numeric(1)>0}]\cr Height in cm per chart entry.}
+\item{vertical}{Logical. If FALSE (default), then horizontal.}
 
-\item{height_fixed}{[\code{numeric(1)>0}]\cr Fixed height in cm.}
-
-\item{main_font_size}{[\code{integer(1)}]\cr Font size for all other text}
-
-\item{font_family}{Office font family. Defaults to "Arial". See ?officer::fp_text() for options.}
+\item{desc}{Loical, sort in descending order?}
 
 \item{seed}{Optional random seed for selection of colours in blender.}
 }
