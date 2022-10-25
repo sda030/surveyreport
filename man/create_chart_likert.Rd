@@ -17,6 +17,7 @@ create_chart_likert(
   colour_na = "gray90",
   colour_2nd_binary_cat = "#ffffff",
   vertical = FALSE,
+  what = "percent",
   seed = 1
 )
 }
@@ -46,6 +47,8 @@ Must contain at least the number of unique values (incl. missing) in the data se
 \item{colour_2nd_binary_cat}{[\code{character(1)}]\cr Colour for second category in binary variables. Often useful to hide this.}
 
 \item{vertical}{Logical. If FALSE (default), then horizontal.}
+
+\item{what}{[\code{character(1)}] Either "percent" or "frequency". Supports partial matching.}
 
 \item{seed}{Optional random seed for selection of colours in blender.}
 }

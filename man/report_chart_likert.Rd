@@ -18,9 +18,10 @@ report_chart_likert(
   height_per_col = 0.3,
   height_fixed = 1,
   chart_formatting = NULL,
+  what = "percent",
   digits = 1,
   percent = TRUE,
-  sort_col = NULL,
+  sort_by = NULL,
   vertical = FALSE,
   desc = FALSE,
   seed = 1
@@ -56,11 +57,13 @@ Must contain at least the number of unique values (incl. missing) in the data se
 \item{chart_formatting}{[\code{integer(1)}]\cr
 Which template style to be used for formatting chart?}
 
+\item{what}{[\code{character(1)}] Either "percent" or "frequency". Supports partial matching.}
+
 \item{digits}{Number of decimal places as integer.}
 
 \item{percent}{Logical, whether to include percentage symbol on chart.}
 
-\item{sort_col}{String, sort by value or label?}
+\item{sort_by}{String, sort by value or label?}
 
 \item{vertical}{Logical. If FALSE (default), then horizontal.}
 

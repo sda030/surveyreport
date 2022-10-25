@@ -14,6 +14,7 @@
 #' @param colour_2nd_binary_cat [\code{character(1)}]\cr Colour for second category in binary variables. Often useful to hide this.
 #' @param font_family Word font family. See officer::fp_text
 #' @param vertical Logical. If FALSE (default), then horizontal.
+#' @param what [\code{character(1)}] Either "percent" or "frequency". Supports partial matching.
 #' @param seed Optional random seed for selection of colours in blender.
 #'
 #' @importFrom crosstable crosstable
@@ -32,6 +33,7 @@ create_chart_likert <-
            colour_na = "gray90",
            colour_2nd_binary_cat = "#ffffff",
            vertical = FALSE,
+           what = "percent",
            seed = 1) {
 
     coll <- checkmate::makeAssertCollection()
@@ -89,13 +91,18 @@ create_chart_likert <-
 
     m <- mschart::ms_barchart(data = data, y = y, x = x,
                               group = group, labels = labels)
-    m <- mschart::as_bar_stack(x = m, dir = if(vertical) "vertical" else "horizontal", percent = T)
+
+    if(grepl("per", what)) {
+      m <- mschart::as_bar_stack(x = m,
+                                 dir = if(vertical) "vertical" else "horizontal",
+                                 percent = TRUE)
+    }
     m <- mschart::chart_data_fill(x = m, values = colour_palette)
     m <- mschart::chart_data_stroke(x = m, values = colour_palette)
     m <- mschart::chart_labels_text(x = m, values = fp_text_settings)
     m <- mschart::chart_labels(x = m, ylab = NULL, xlab = NULL, title = NULL)
     m <- mschart::chart_ax_x(x = m, major_tick_mark = "none")
-    m <- mschart::chart_ax_y(x = m, num_fmt = "0%%")
+    if(grepl("per", what)) m <- mschart::chart_ax_y(x = m, num_fmt = "0%%")
     m <- mschart::chart_theme(x = m,
                               legend_text = main_text,
                               axis_text_x = main_text,
@@ -128,9 +135,10 @@ create_chart_likert <-
 #' Which template style to be used for formatting chart?
 #' @param height_per_col [\code{numeric(1)>0}]\cr Height in cm per chart entry.
 #' @param height_fixed [\code{numeric(1)>0}]\cr Fixed height in cm.
+#' @param what [\code{character(1)}] Either "percent" or "frequency". Supports partial matching.
 #' @param digits Number of decimal places as integer.
 #' @param percent Logical, whether to include percentage symbol on chart.
-#' @param sort_col String, sort by value or label?
+#' @param sort_by String, sort by value or label?
 #' @param desc Loical, sort in descending order?
 #' @param vertical Logical. If FALSE (default), then horizontal.
 #' @param seed Optional random seed for selection of colours in blender.
@@ -190,9 +198,10 @@ report_chart_likert <-
 			 height_per_col = .3,
 			 height_fixed = 1,
 			 chart_formatting = NULL,
+			 what = "percent",
 			 digits = 1,
 			 percent = TRUE,
-			 sort_col = NULL,
+			 sort_by = NULL,
 			 vertical = FALSE,
 			 desc = FALSE,
 			 seed = 1) {
@@ -222,12 +231,20 @@ report_chart_likert <-
 
 
 
-		data <- prepare_data_for_mschart(data[, cols_pos],
+		if(grepl("^per", what)) {
+
+		data <- prepare_perc_for_mschart(data[, cols_pos],
 		                                 showNA = showNA,
 		                                 percent = percent,
 		                                 digits = digits,
-		                                 sort_col = sort_col,
+		                                 sort_by = sort_by,
 		                                 desc = desc)
+		} else if(grepl("^fre", what)) {
+		  data <- prepare_freq_for_mschart(data[, cols_pos],
+		                                   showNA = showNA,
+		                                   sort_by = sort_by,
+		                                   desc = desc)
+		} else cli::cli_abort("{.arg what} must be either {.var percent} or {.var frequency}.")
 
 		chart <-
 		  create_chart_likert(data = data,
@@ -238,6 +255,7 @@ report_chart_likert <-
 		                      colour_2nd_binary_cat = colour_2nd_binary_cat,
 		                      font_family = font_family,
 		                      vertical = vertical,
+		                      what = what,
 		                      seed = seed)
 
 		determine_height <-
@@ -261,8 +279,8 @@ report_chart_likert <-
 #' @param showNA Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).
 #' @param digits Number of decimal places as integer.
 #' @param percent Logical, whether to include percentage symbol on chart.
-#' @param sort_col String, sort by either "value", "label", ".id" (variable name) or NULL (default).
-#' @param desc Reverse sorting of sort_col
+#' @param sort_by String, sort by either "value", "label", ".id" (variable name) or NULL (default).
+#' @param desc Reverse sorting of sort_by
 #' @param call Error call function, usually not needed.
 #'
 #' @importFrom crosstable crosstable
@@ -271,13 +289,13 @@ report_chart_likert <-
 #' @importFrom dplyr arrange desc
 #'
 #' @return Dataset
-prepare_data_for_mschart <-
+prepare_perc_for_mschart <-
   function(data,
            showNA = "ifany",
            call = rlang::caller_env(),
            digits = 1,
            percent = TRUE,
-           sort_col = NULL,
+           sort_by = NULL,
            desc = FALSE) {
     rlang::arg_match(showNA, values = c("ifany", "always", "no"), multiple = FALSE, error_call = call)
     if(!rlang::is_integerish(digits)) cli::cli_abort("{.arg digits} must be {.cls {integer(1)}}.")
@@ -301,11 +319,58 @@ prepare_data_for_mschart <-
 
     data$n_unique <- NULL
     data$variable <- factor(data$variable, levels = fct_uniques)
-    if(!is.null(sort_col)) {
+    if(!is.null(sort_by)) {
       data <-
         dplyr::arrange(data,
                        .data$variable,
-                       if(desc) dplyr::desc(.data[[sort_col]]) else .data[[sort_col]])
+                       if(desc) dplyr::desc(.data[[sort_by]]) else .data[[sort_by]])
+    }
+    data$label <- factor(data$label,
+                         levels = unique(as.character(data$label)),
+                         ordered = TRUE)
+    data
+  }
+
+
+#' Helper Function to Prepare Frequency Data for create_chart_likert
+#'
+#' @param data Dataset
+#' @param showNA Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).
+#' @param sort_by String, sort by either "value", "label", ".id" (variable name) or NULL (default).
+#' @param desc Reverse sorting of sort_by
+#' @param call Error call function, usually not needed.
+#'
+#' @importFrom crosstable crosstable
+#' @importFrom rlang arg_match caller_env is_integerish
+#' @importFrom cli cli_abort
+#' @importFrom dplyr arrange desc
+#'
+#' @return Dataset
+prepare_freq_for_mschart <-
+  function(data,
+           showNA = "ifany",
+           call = rlang::caller_env(),
+           sort_by = NULL,
+           desc = FALSE) {
+    rlang::arg_match(showNA, values = c("ifany", "always", "no"), multiple = FALSE, error_call = call)
+    data <- crosstable::crosstable(data = data, percent_pattern = "{n}", showNA = showNA,
+                                   label = TRUE)
+
+    data <- as.data.frame(data)
+    data$value <- as.integer(data$value)
+    data$data_label <- as.character(data$value)
+    data$n_unique <- ave(x = data$variable, data$label,
+                         FUN = function(x) length(unique(x)))
+    fct_max <- max(data$n_unique, na.rm = TRUE)
+    fct_uniques <- unique(data[data$n_unique == fct_max, "variable"])
+
+    data$n_unique <- NULL
+    data$variable <- factor(data$variable, levels = fct_uniques)
+    if(!is.null(sort_by)) {
+      data <-
+        dplyr::arrange(data,
+                       .data$variable,
+                       if(desc) dplyr::desc(.data[[sort_by]]) else .data[[sort_by]])
     }
     data$label <- factor(data$label,
                          levels = unique(as.character(data$label)),

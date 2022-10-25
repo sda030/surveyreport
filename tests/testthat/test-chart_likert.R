@@ -1,13 +1,25 @@
-test_that("prepare_data_for_mschart", {
-  testthat::expect_equal(surveyreport:::prepare_data_for_mschart(
+test_that("prepare_perc_for_mschart", {
+  testthat::expect_equal(surveyreport:::prepare_perc_for_mschart(
     data = ex_survey1[, paste0("a_", 1:9)],
     digits = 0, percent = F)[1,"data_label"],
     "49")
 
   testthat::expect_equal(
-    surveyreport:::prepare_data_for_mschart(
+    surveyreport:::prepare_perc_for_mschart(
     data = ex_survey1[, paste0("a_", 1:9)],
-    sort_col = "value", desc = T)[1,4],
+    sort_by = "value", desc = T)[1,4],
+    expected = 60)
+})
+
+test_that("prepare_freq_for_mschart", {
+  testthat::expect_equal(surveyreport:::prepare_freq_for_mschart(
+    data = ex_survey1[, paste0("a_", 1:9)], showNA = "no")[1,"data_label"],
+    "49")
+
+  testthat::expect_equal(
+    surveyreport:::prepare_perc_for_mschart(
+      data = ex_survey1[, paste0("a_", 1:9)],
+      sort_by = "value", desc = T)[1,4],
     expected = 60)
 })
 
@@ -107,9 +119,28 @@ test_that("report_chart_likert errors", {
 
     test_docx_a19_value_sort <-
       ex_survey1 %>%
-      report_chart_likert(cols = a_1:a_9, sort_col = "value", desc=F, vertical=F, showNA = "no")
+      report_chart_likert(cols = a_1:a_9, sort_by = "value", desc=F, vertical=F, showNA = "no")
     officer:::print.rdocx(test_docx_a19_value_sort, target = "test_docx_a19_value_sort.docx")
     file.remove("test_docx_a19_value_sort.docx")
+
+
+
+    test_freq_a19_value_sort <-
+      ex_survey1 %>%
+      report_chart_likert(cols = a_1:a_9, sort_by = "value", desc=T, vertical=F, showNA = "no",
+                          what = "fre")
+    officer:::print.rdocx(test_freq_a19_value_sort, target = "test_freq_a19_value_sort.docx")
+    file.remove("test_freq_a19_value_sort.docx")
+
+
+    test_freq_b13_value_sort <-
+      ex_survey1 %>%
+      report_chart_likert(cols = b_1:b_3, sort_by = "value", desc=T, vertical=F, showNA = "no",
+                          what = "fre")
+    officer:::print.rdocx(test_freq_b13_value_sort, target = "test_freq_b13_value_sort.docx")
+    file.remove("test_freq_b13_value_sort.docx")
+
+
   # testthat::expect_output_file(object =
   #                                officer:::print.rdocx(test_docx8, target = "test8.docx"),
   # file = system.file("template","test8.docx", package = "surveyreport", mustWork = TRUE))
