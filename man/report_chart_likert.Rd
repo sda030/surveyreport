@@ -20,7 +20,7 @@ report_chart_likert(
   chart_formatting = NULL,
   what = "percent",
   digits = 1,
-  percent = TRUE,
+  percent_sign = TRUE,
   sort_by = NULL,
   vertical = FALSE,
   desc = FALSE,
@@ -61,7 +61,7 @@ Which template style to be used for formatting chart?}
 
 \item{digits}{Number of decimal places as integer.}
 
-\item{percent}{Logical, whether to include percentage symbol on chart.}
+\item{percent_sign}{Logical, whether to include percentage symbol on chart.}
 
 \item{sort_by}{String, sort by value or label?}
 

@@ -261,7 +261,7 @@ hex_bw <- function(hex_code) {
 
 	rgb_conv <- lapply(myrgb, function(x) {
 		i <- x / 255
-		if (i <= 0.03928) i / 12.92 else ((i + 0.055) / 1.055) ^ 2.4
+		if (i <= 0.04045) i / 12.92 else ((i + 0.055) / 1.055) ^ 2.4
 	})
 	rgb_calc <- (0.2126*rgb_conv[[1]]) + (0.7152*rgb_conv[[2]]) + (0.0722*rgb_conv[[3]])
 

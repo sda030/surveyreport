@@ -48,7 +48,7 @@ create_chart_likert <-
     checkmate::assert_number(seed, lower = 1, finite = TRUE, add = coll)
     checkmate::assert_data_frame(data, add = coll)
     checkmate::assert_logical(vertical, len = 1, any.missing = FALSE, add = coll)
-    checkmate::assert_subset(x = colnames(data), choices = c(y,x,group,labels, ".id"), add = coll)
+    checkmate::assert_subset(x = colnames(data), choices = c(y,x,group,labels, ".id", "cat_id", "sum_value"), add = coll)
     if(!is.null(colour_palette) & !all(is_colour(colour_palette))) {
       cli::cli_abort(
         c("Invalid user-specified colours.",
@@ -58,9 +58,9 @@ create_chart_likert <-
     checkmate::reportAssertions(coll)
 
     colour_palette <-
-        get_colour_set(n_colours_needed = length(levels(data[[group]])),
-                       user_colour_set = colour_palette,
-                       seed = seed)
+      get_colour_set(n_colours_needed = length(levels(data[[group]])),
+                     user_colour_set = colour_palette,
+                     seed = seed)
 
     colour_palette <-
       rlang::set_names(colour_palette, nm=levels(data[[group]]))
@@ -80,7 +80,8 @@ create_chart_likert <-
     fp_text_settings <-
       lapply(colour_palette,
              function(color) {
-               officer::fp_text(font.size=label_font_size, color=hex_bw(color),
+               officer::fp_text(font.size = label_font_size,
+                                color = hex_bw(color),
                                 font.family = font_family)
              })
     fp_text_settings <- fp_text_settings[seq_len(dplyr::n_distinct(data[[group]]))]
@@ -137,7 +138,7 @@ create_chart_likert <-
 #' @param height_fixed [\code{numeric(1)>0}]\cr Fixed height in cm.
 #' @param what [\code{character(1)}] Either "percent" or "frequency". Supports partial matching.
 #' @param digits Number of decimal places as integer.
-#' @param percent Logical, whether to include percentage symbol on chart.
+#' @param percent_sign Logical, whether to include percentage symbol on chart.
 #' @param sort_by String, sort by value or label?
 #' @param desc Loical, sort in descending order?
 #' @param vertical Logical. If FALSE (default), then horizontal.
@@ -185,92 +186,92 @@ create_chart_likert <-
 #' file.remove("test_docx_b13.docx")
 
 report_chart_likert <-
-	function(data,
-			 cols = everything(),
-			 showNA = "ifany",
-			 docx_template = NULL,
-			 label_font_size = 8,
-			 main_font_size = 9,
-			 font_family = "Calibri",
-			 colour_palette = NULL,
-			 colour_na = "gray90",
-			 colour_2nd_binary_cat = "#ffffff",
-			 height_per_col = .3,
-			 height_fixed = 1,
-			 chart_formatting = NULL,
-			 what = "percent",
-			 digits = 1,
-			 percent = TRUE,
-			 sort_by = NULL,
-			 vertical = FALSE,
-			 desc = FALSE,
-			 seed = 1) {
+  function(data,
+           cols = everything(),
+           showNA = "ifany",
+           docx_template = NULL,
+           label_font_size = 8,
+           main_font_size = 9,
+           font_family = "Calibri",
+           colour_palette = NULL,
+           colour_na = "gray90",
+           colour_2nd_binary_cat = "#ffffff",
+           height_per_col = .3,
+           height_fixed = 1,
+           chart_formatting = NULL,
+           what = "percent",
+           digits = 1,
+           percent_sign = TRUE,
+           sort_by = NULL,
+           vertical = FALSE,
+           desc = FALSE,
+           seed = 1) {
 
-	  if(!inherits(data, what = "data.frame")) {
-	    cli::cli_abort("data must be a {.cls data.frame} or {.cls tibble}.")
-	  }
+    if(!inherits(data, what = "data.frame")) {
+      cli::cli_abort("data must be a {.cls data.frame} or {.cls tibble}.")
+    }
 
-		cols_enq <- rlang::enquo(cols)
-		cols_pos <- tidyselect::eval_select(cols_enq, data = data)
+    cols_enq <- rlang::enquo(cols)
+    cols_pos <- tidyselect::eval_select(cols_enq, data = data)
 
-		check_category_pairs(data = data, cols_pos = cols_pos)
-
-
-
-		docx_file <- use_docx(docx_template = docx_template)
-		docx_dims <- officer::docx_dim(docx_file)
-		docx_dims <- c(w =
-		                 docx_dims$page[["width"]] -
-		                 docx_dims$margins[["left"]] -
-		                 docx_dims$margins[["right"]],
-		               h =
-		                 docx_dims$page[["height"]] -
-		                 docx_dims$margins[["top"]] -
-		                 docx_dims$margins[["bottom"]])
+    check_category_pairs(data = data, cols_pos = cols_pos)
 
 
 
+    docx_file <- use_docx(docx_template = docx_template)
+    docx_dims <- officer::docx_dim(docx_file)
+    docx_dims <- c(w =
+                     docx_dims$page[["width"]] -
+                     docx_dims$margins[["left"]] -
+                     docx_dims$margins[["right"]],
+                   h =
+                     docx_dims$page[["height"]] -
+                     docx_dims$margins[["top"]] -
+                     docx_dims$margins[["bottom"]])
 
-		if(grepl("^per", what)) {
 
-		data <- prepare_perc_for_mschart(data[, cols_pos],
-		                                 showNA = showNA,
-		                                 percent = percent,
-		                                 digits = digits,
-		                                 sort_by = sort_by,
-		                                 desc = desc)
-		} else if(grepl("^fre", what)) {
-		  data <- prepare_freq_for_mschart(data[, cols_pos],
-		                                   showNA = showNA,
-		                                   sort_by = sort_by,
-		                                   desc = desc)
-		} else cli::cli_abort("{.arg what} must be either {.var percent} or {.var frequency}.")
 
-		chart <-
-		  create_chart_likert(data = data,
-		                      label_font_size = label_font_size,
-		                      main_font_size = main_font_size,
-		                      colour_palette = colour_palette,
-		                      colour_na = colour_na,
-		                      colour_2nd_binary_cat = colour_2nd_binary_cat,
-		                      font_family = font_family,
-		                      vertical = vertical,
-		                      what = what,
-		                      seed = seed)
 
-		determine_height <-
-		  min(c(height_fixed + height_per_col*length(cols_pos),
-		        docx_dims[["h"]]))
+    if(grepl("^per", what)) {
 
-		mschart::body_add_chart(x = docx_file,
-		                        chart = chart,
-		                        style = chart_formatting,
-		                        pos = "after",
-		                        width = docx_dims[["w"]],
-		                        height = determine_height)
+      data <- prepare_perc_for_mschart(data[, cols_pos],
+                                       showNA = showNA,
+                                       percent_sign = percent_sign,
+                                       digits = digits,
+                                       sort_by = sort_by,
+                                       desc = desc)
+    } else if(grepl("^fre", what)) {
+      data <- prepare_freq_for_mschart(data[, cols_pos],
+                                       showNA = showNA,
+                                       sort_by = sort_by,
+                                       desc = desc)
+    } else cli::cli_abort("{.arg what} must be either {.var percent} or {.var frequency}.")
 
-		docx_file
-	}
+    chart <-
+      create_chart_likert(data = data,
+                          label_font_size = label_font_size,
+                          main_font_size = main_font_size,
+                          colour_palette = colour_palette,
+                          colour_na = colour_na,
+                          colour_2nd_binary_cat = colour_2nd_binary_cat,
+                          font_family = font_family,
+                          vertical = vertical,
+                          what = what,
+                          seed = seed)
+
+    determine_height <-
+      min(c(height_fixed + height_per_col*length(cols_pos),
+            docx_dims[["h"]]))
+
+    mschart::body_add_chart(x = docx_file,
+                            chart = chart,
+                            style = chart_formatting,
+                            pos = "after",
+                            width = docx_dims[["w"]],
+                            height = determine_height)
+
+    docx_file
+  }
 
 
 #' Helper Function to Prepare Data for create_chart_likert
@@ -278,7 +279,7 @@ report_chart_likert <-
 #' @param data Dataset
 #' @param showNA Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).
 #' @param digits Number of decimal places as integer.
-#' @param percent Logical, whether to include percentage symbol on chart.
+#' @param percent_sign Logical, whether to include percentage symbol on chart.
 #' @param sort_by String, sort by either "value", "label", ".id" (variable name) or NULL (default).
 #' @param desc Reverse sorting of sort_by
 #' @param call Error call function, usually not needed.
@@ -294,40 +295,21 @@ prepare_perc_for_mschart <-
            showNA = "ifany",
            call = rlang::caller_env(),
            digits = 1,
-           percent = TRUE,
+           percent_sign = TRUE,
            sort_by = NULL,
            desc = FALSE) {
     rlang::arg_match(showNA, values = c("ifany", "always", "no"), multiple = FALSE, error_call = call)
     if(!rlang::is_integerish(digits)) cli::cli_abort("{.arg digits} must be {.cls {integer(1)}}.")
-    data <- crosstable::crosstable(data = data, percent_pattern = "{n}", showNA = showNA,
-                                   label = TRUE)
+    data <- cross_n(data, showNA)
 
-    data <- as.data.frame(data)
-    data$value <- as.integer(data$value)
     data$data_label <-
       ave(x = data$value,
           data$label,
-          FUN = function(x) sprintf(fmt = paste0("%.",
-                                                 digits,
-                                                 "f",
-                                                 if(percent) "%%"),
-                                    x/sum(x, na.rm = T)*100))
-    data$n_unique <- ave(x = data$variable, data$label,
-                         FUN = function(x) length(unique(x)))
-    fct_max <- max(data$n_unique, na.rm = TRUE)
-    fct_uniques <- unique(data[data$n_unique == fct_max, "variable"])
-
-    data$n_unique <- NULL
-    data$variable <- factor(data$variable, levels = fct_uniques)
-    if(!is.null(sort_by)) {
-      data <-
-        dplyr::arrange(data,
-                       .data$variable,
-                       if(desc) dplyr::desc(.data[[sort_by]]) else .data[[sort_by]])
-    }
-    data$label <- factor(data$label,
-                         levels = unique(as.character(data$label)),
-                         ordered = TRUE)
+          FUN = function(x) {
+            fmt <- paste0("%.",digits, "f", if(percent_sign) "%%")
+            sprintf(fmt = fmt, x/sum(x, na.rm = T)*100)
+          })
+    data <- sorter(data, sort_by=sort_by, desc=desc)
     data
   }
 
@@ -353,27 +335,55 @@ prepare_freq_for_mschart <-
            sort_by = NULL,
            desc = FALSE) {
     rlang::arg_match(showNA, values = c("ifany", "always", "no"), multiple = FALSE, error_call = call)
-    data <- crosstable::crosstable(data = data, percent_pattern = "{n}", showNA = showNA,
-                                   label = TRUE)
+    data <- cross_n(data, showNA)
 
-    data <- as.data.frame(data)
-    data$value <- as.integer(data$value)
     data$data_label <- as.character(data$value)
-    data$n_unique <- ave(x = data$variable, data$label,
-                         FUN = function(x) length(unique(x)))
-    fct_max <- max(data$n_unique, na.rm = TRUE)
-    fct_uniques <- unique(data[data$n_unique == fct_max, "variable"])
+    data <- sorter(data=data, sort_by=sort_by, desc=desc)
 
-    data$n_unique <- NULL
-    data$variable <- factor(data$variable, levels = fct_uniques)
-    if(!is.null(sort_by)) {
-      data <-
-        dplyr::arrange(data,
-                       .data$variable,
-                       if(desc) dplyr::desc(.data[[sort_by]]) else .data[[sort_by]])
-    }
-    data$label <- factor(data$label,
-                         levels = unique(as.character(data$label)),
-                         ordered = TRUE)
     data
   }
+
+cross_n <- function(data, showNA="ifany") {
+  data <- crosstable::crosstable(data = data,
+                                 percent_pattern = "{n}",
+                                 showNA = showNA,
+                                 label = TRUE)
+
+  data <- as.data.frame(data)
+  data$value <- as.integer(data$value)
+  data
+}
+
+
+sorter <- function(data, sort_by=NULL, desc=FALSE) {
+  data$n_unique <- ave(x = data$variable, data$label,
+                       FUN = function(x) length(unique(x)))
+  fct_max <- max(data$n_unique, na.rm = TRUE)
+  fct_uniques <- unique(data[data$n_unique == fct_max, "variable"])
+  data$n_unique <- NULL
+  data$variable <- factor(data$variable, levels = fct_uniques)
+  data$cat_id <- data$variable %in% sort_by
+  if(!is.null(sort_by)) {
+
+    if(all(sort_by %in% names(data))) {
+      sort_col <- sort_by
+    } else if(all(sort_by %in% unique(data$variable))) {
+      sort_col <- "sum_value"
+    }
+    data <- dplyr::group_by(data, .data$label, .data$cat_id)
+    data <- dplyr::mutate(data,
+                          sum_value = ifelse(.data$cat_id,
+                                             sum(as.numeric(.data$value), na.rm=TRUE),
+                                             NA))
+    data <- dplyr::ungroup(data)
+    data <-
+      dplyr::arrange(data,
+                     dplyr::desc(.data$cat_id),
+                     if(desc) dplyr::desc(.data[[sort_col]]) else .data[[sort_col]])
+  }
+  data$label <- factor(data$label,
+                       levels = unique(as.character(data$label)),
+                       ordered = TRUE)
+  data <- dplyr::arrange(data, as.integer(.data$label), .data$variable)
+  as.data.frame(data)
+}

@@ -9,7 +9,7 @@ prepare_perc_for_mschart(
   showNA = "ifany",
   call = rlang::caller_env(),
   digits = 1,
-  percent = TRUE,
+  percent_sign = TRUE,
   sort_by = NULL,
   desc = FALSE
 )
@@ -23,7 +23,7 @@ prepare_perc_for_mschart(
 
 \item{digits}{Number of decimal places as integer.}
 
-\item{percent}{Logical, whether to include percentage symbol on chart.}
+\item{percent_sign}{Logical, whether to include percentage symbol on chart.}
 
 \item{sort_by}{String, sort by either "value", "label", ".id" (variable name) or NULL (default).}
 
