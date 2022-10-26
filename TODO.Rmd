@@ -15,18 +15,12 @@ knitr::opts_chunk$set(echo = TRUE)
 - mutate() has a bug where it drops the attributes
 
 # report_chart_likert()
-- sorting by sum of categories
-- refactor sorting if-statements
-- adjust to 0,20,40,60,80,100 on scale if figure is narrow
-- hide small percentages (very hard!)
 - Left adjustment seems impossible to fix in Word and mschart...
 
 # crosstable
 - missingness
 
 # Main steps
-- Split off MplusAutomation extentions
-- Split off janitor tabyl extensions (which should be split itself into janitor and tabyl)
 - Split off rename_variables into either janitor or a vctrs::vec_as_names() extension
 - Graph related stuff into existing graph package? Or tidySEM, etc?
 

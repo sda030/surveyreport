@@ -24,6 +24,7 @@ report_chart_likert(
   sort_by = NULL,
   vertical = FALSE,
   desc = FALSE,
+  hide_label_if_below = 1,
   seed = 1
 )
 }
@@ -63,11 +64,13 @@ Which template style to be used for formatting chart?}
 
 \item{percent_sign}{Logical, whether to include percentage symbol on chart.}
 
-\item{sort_by}{String, sort by value or label?}
+\item{sort_by}{[\code{character(1)}], sort output by "label", size of a category, or sum of categories (character vector). Defaults to none (NULL).}
 
 \item{vertical}{Logical. If FALSE (default), then horizontal.}
 
-\item{desc}{Loical, sort in descending order?}
+\item{desc}{Logical, sort in descending order?}
+
+\item{hide_label_if_below}{[\code{numeric(1)}] Whether to hide label if below this value.}
 
 \item{seed}{Optional random seed for selection of colours in blender.}
 }

@@ -11,7 +11,8 @@ prepare_perc_for_mschart(
   digits = 1,
   percent_sign = TRUE,
   sort_by = NULL,
-  desc = FALSE
+  desc = FALSE,
+  hide_label_if_below = 1
 )
 }
 \arguments{
@@ -25,9 +26,11 @@ prepare_perc_for_mschart(
 
 \item{percent_sign}{Logical, whether to include percentage symbol on chart.}
 
-\item{sort_by}{String, sort by either "value", "label", ".id" (variable name) or NULL (default).}
+\item{sort_by}{[\code{character(1)}], sort output by "label", size of a category, or sum of categories (character vector). Defaults to none (NULL).}
 
 \item{desc}{Reverse sorting of sort_by}
+
+\item{hide_label_if_below}{[\code{numeric(1)}] Whether to hide label if below this value.}
 }
 \value{
 Dataset

@@ -9,7 +9,8 @@ prepare_freq_for_mschart(
   showNA = "ifany",
   call = rlang::caller_env(),
   sort_by = NULL,
-  desc = FALSE
+  desc = FALSE,
+  hide_label_if_below = 1
 )
 }
 \arguments{
@@ -19,9 +20,11 @@ prepare_freq_for_mschart(
 
 \item{call}{Error call function, usually not needed.}
 
-\item{sort_by}{String, sort by either "value", "label", ".id" (variable name) or NULL (default).}
+\item{sort_by}{[\code{character(1)}], sort output by "label", size of a category, or sum of categories (character vector). Defaults to none (NULL).}
 
 \item{desc}{Reverse sorting of sort_by}
+
+\item{hide_label_if_below}{[\code{numeric(1)}] Whether to hide label if below this value.}
 }
 \value{
 Dataset

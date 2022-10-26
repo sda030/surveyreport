@@ -139,9 +139,10 @@ create_chart_likert <-
 #' @param what [\code{character(1)}] Either "percent" or "frequency". Supports partial matching.
 #' @param digits Number of decimal places as integer.
 #' @param percent_sign Logical, whether to include percentage symbol on chart.
-#' @param sort_by String, sort by value or label?
-#' @param desc Loical, sort in descending order?
+#' @param sort_by [\code{character(1)}], sort output by "label", size of a category, or sum of categories (character vector). Defaults to none (NULL).
+#' @param desc Logical, sort in descending order?
 #' @param vertical Logical. If FALSE (default), then horizontal.
+#' @param hide_label_if_below [\code{numeric(1)}] Whether to hide label if below this value.
 #' @param seed Optional random seed for selection of colours in blender.
 #'
 #' @importFrom crosstable crosstable
@@ -205,6 +206,7 @@ report_chart_likert <-
            sort_by = NULL,
            vertical = FALSE,
            desc = FALSE,
+           hide_label_if_below = 1,
            seed = 1) {
 
     if(!inherits(data, what = "data.frame")) {
@@ -239,12 +241,14 @@ report_chart_likert <-
                                        percent_sign = percent_sign,
                                        digits = digits,
                                        sort_by = sort_by,
-                                       desc = desc)
+                                       desc = desc,
+                                       hide_label_if_below = hide_label_if_below)
     } else if(grepl("^fre", what)) {
       data <- prepare_freq_for_mschart(data[, cols_pos],
                                        showNA = showNA,
                                        sort_by = sort_by,
-                                       desc = desc)
+                                       desc = desc,
+                                       hide_label_if_below = hide_label_if_below)
     } else cli::cli_abort("{.arg what} must be either {.var percent} or {.var frequency}.")
 
     chart <-
@@ -280,9 +284,10 @@ report_chart_likert <-
 #' @param showNA Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).
 #' @param digits Number of decimal places as integer.
 #' @param percent_sign Logical, whether to include percentage symbol on chart.
-#' @param sort_by String, sort by either "value", "label", ".id" (variable name) or NULL (default).
+#' @param sort_by [\code{character(1)}], sort output by "label", size of a category, or sum of categories (character vector). Defaults to none (NULL).
 #' @param desc Reverse sorting of sort_by
 #' @param call Error call function, usually not needed.
+#' @param hide_label_if_below [\code{numeric(1)}] Whether to hide label if below this value.
 #'
 #' @importFrom crosstable crosstable
 #' @importFrom rlang arg_match caller_env is_integerish
@@ -297,7 +302,8 @@ prepare_perc_for_mschart <-
            digits = 1,
            percent_sign = TRUE,
            sort_by = NULL,
-           desc = FALSE) {
+           desc = FALSE,
+           hide_label_if_below = 1) {
     rlang::arg_match(showNA, values = c("ifany", "always", "no"), multiple = FALSE, error_call = call)
     if(!rlang::is_integerish(digits)) cli::cli_abort("{.arg digits} must be {.cls {integer(1)}}.")
     data <- cross_n(data, showNA)
@@ -309,7 +315,8 @@ prepare_perc_for_mschart <-
             fmt <- paste0("%.",digits, "f", if(percent_sign) "%%")
             sprintf(fmt = fmt, x/sum(x, na.rm = T)*100)
           })
-    data <- sorter(data, sort_by=sort_by, desc=desc)
+    data <- sorter(data = data, sort_by=sort_by, desc=desc,
+                   hide_label_if_below = hide_label_if_below)
     data
   }
 
@@ -318,9 +325,10 @@ prepare_perc_for_mschart <-
 #'
 #' @param data Dataset
 #' @param showNA Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).
-#' @param sort_by String, sort by either "value", "label", ".id" (variable name) or NULL (default).
+#' @param sort_by [\code{character(1)}], sort output by "label", size of a category, or sum of categories (character vector). Defaults to none (NULL).
 #' @param desc Reverse sorting of sort_by
 #' @param call Error call function, usually not needed.
+#' @param hide_label_if_below [\code{numeric(1)}] Whether to hide label if below this value.
 #'
 #' @importFrom crosstable crosstable
 #' @importFrom rlang arg_match caller_env is_integerish
@@ -333,12 +341,14 @@ prepare_freq_for_mschart <-
            showNA = "ifany",
            call = rlang::caller_env(),
            sort_by = NULL,
-           desc = FALSE) {
+           desc = FALSE,
+           hide_label_if_below = 1) {
     rlang::arg_match(showNA, values = c("ifany", "always", "no"), multiple = FALSE, error_call = call)
     data <- cross_n(data, showNA)
 
     data$data_label <- as.character(data$value)
-    data <- sorter(data=data, sort_by=sort_by, desc=desc)
+    data <- sorter(data=data, sort_by=sort_by, desc=desc,
+                   hide_label_if_below = hide_label_if_below)
 
     data
   }
@@ -355,14 +365,32 @@ cross_n <- function(data, showNA="ifany") {
 }
 
 
-sorter <- function(data, sort_by=NULL, desc=FALSE) {
+#' Internal: Finalizes dataset. Helper function.
+#'
+#' @param data Dataset
+#' @param sort_by [\code{character(1)}], sort output by "label", size of a category, or sum of categories (character vector). Defaults to none (NULL).
+#' @param desc Logical, defaults to ascending order (FALSE).
+#' @param hide_label_if_below [\code{numeric(1)}] Whether to hide label if below this value.
+#'
+#' @importFrom rlang .env
+#' @importFrom dplyr mutate group_by arrange ungroup if_else
+#' @return dataset
+#' @export
+#'
+#' @examples
+sorter <- function(data, sort_by=NULL, desc=FALSE,
+                   hide_label_if_below = 1) {
+
+
   data$n_unique <- ave(x = data$variable, data$label,
                        FUN = function(x) length(unique(x)))
   fct_max <- max(data$n_unique, na.rm = TRUE)
   fct_uniques <- unique(data[data$n_unique == fct_max, "variable"])
-  data$n_unique <- NULL
-  data$variable <- factor(data$variable, levels = fct_uniques)
-  data$cat_id <- data$variable %in% sort_by
+  data <- dplyr::mutate(data,
+                        n_unique = NULL,
+                        variable = factor(x = .data$variable,
+                                          levels = .env$fct_uniques),
+                        cat_id = .data$variable %in% sort_by)
   if(!is.null(sort_by)) {
 
     if(all(sort_by %in% names(data))) {
@@ -381,9 +409,15 @@ sorter <- function(data, sort_by=NULL, desc=FALSE) {
                      dplyr::desc(.data$cat_id),
                      if(desc) dplyr::desc(.data[[sort_col]]) else .data[[sort_col]])
   }
-  data$label <- factor(data$label,
-                       levels = unique(as.character(data$label)),
-                       ordered = TRUE)
+  data <- dplyr::mutate(data,
+                        label = factor(.data$label,
+                                       levels = unique(as.character(.data$label)),
+                                       ordered = TRUE),
+                        data_label =
+                          dplyr::if_else(as.numeric(.data$value) <
+                                           as.numeric(.env$hide_label_if_below),
+                                         "",
+                                         as.character(.data$data_label)))
   data <- dplyr::arrange(data, as.integer(.data$label), .data$variable)
   as.data.frame(data)
 }
