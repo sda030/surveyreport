@@ -61,7 +61,7 @@ test_that("report_chart_likert(what='percent')", {
     dplyr::pull(template_style)
 
   testthat::expect_s3_class(object = {
-  test_docx_b13 <-
+  test_chart <-
     ex_survey1 %>%
     report_chart_likert(cols = b_1:b_3,
                         docx_template = docx_template,
@@ -79,8 +79,11 @@ test_that("report_chart_likert(what='percent')", {
                         height_per_col = .3,
                         height_fixed = 1)
   }, class = "rdocx", exact = TRUE)
-  officer:::print.rdocx(test_docx_b13, target = "test_docx_b13.docx")
-  file.remove("test_docx_b13.docx")
+  withr::with_tempfile(new = "test", code = {
+    officer:::print.rdocx(test_chart, target = "test.docx")
+  }, fileext = ".docx")
+
+
 
   testthat::expect_error(object = report_chart_likert(mtcars, cols = c(cyl, vs, gear, carb)),
                          regexp = "Column `cyl` and column `vs` lack common categories")
@@ -88,36 +91,45 @@ test_that("report_chart_likert(what='percent')", {
                          regexp = "Column `a_1` and column `b_1` lack common categories")
 
   testthat::expect_s3_class(object = {
-  test_docx_a19 <-
+  test_chart <-
     ex_survey1 %>%
     report_chart_likert(cols = a_1:a_9)
   }, class = "rdocx", exact = TRUE)
-    officer:::print.rdocx(test_docx_a19, target = "test_docx_a19.docx")
-    file.remove("test_docx_a19.docx")
+  withr::with_tempfile(new = "test", code = {
+    officer:::print.rdocx(test_chart, target = "test.docx")
+  }, fileext = ".docx")
+
+
 
     testthat::expect_s3_class(object = {
-    test_docx_a19_no_NA <-
+    test_chart <-
       ex_survey1 %>%
       report_chart_likert(cols = a_1:a_9, showNA = "no")
 }, class = "rdocx", exact = TRUE)
-    officer:::print.rdocx(test_docx_a19_no_NA, target = "test_docx_a19_no_NA.docx")
-    file.remove("test_docx_a19_no_NA.docx")
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
+
 
     testthat::expect_s3_class(object = {
 
-    test_docx_p14_p4NA <-
+    test_chart <-
       ex_survey1 %>%
       mutate(across(p_4, ~forcats::fct_recode(.x, NULL = "Strongly disagree"))) %>%
       labelled::copy_labels_from(from = ex_survey1) %>%
       report_chart_likert(cols = p_1:p_4)
     }, class = "rdocx", exact = TRUE)
-    officer:::print.rdocx(test_docx_p14_p4NA, target = "test_docx_p14_p4NA.docx")
-    file.remove("test_docx_p14_p4NA.docx")
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
+
 
 
 
     testthat::expect_s3_class(object = {
-    test_docx_p14_p1NA <- # The dangerous one
+    test_chart <- # The dangerous one
       ex_survey1 %>%
       mutate(across(p_1, ~forcats::fct_recode(.x, NULL = "Somewhat disagree"))) %>%
       labelled::copy_labels_from(from = ex_survey1) %>%
@@ -128,113 +140,157 @@ test_that("report_chart_likert(what='percent')", {
                           height_per_col = .3,
                           height_fixed = 1)
     }, class = "rdocx", exact = TRUE)
-    officer:::print.rdocx(test_docx_p14_p1NA, target = "test_docx_p14_p1NA.docx")
-    file.remove("test_docx_p14_p1NA.docx")
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
+
 
 
 
     testthat::expect_s3_class(object = {
-    test_docx_p14_p4NA2 <-
+    test_chart <-
       ex_survey1 %>%
       mutate(across(p_4, ~forcats::fct_recode(.x, NULL = "Strongly agree"))) %>%
       labelled::copy_labels_from(from = ex_survey1) %>%
       report_chart_likert(cols = p_1:p_4)
     }, class = "rdocx", exact = TRUE)
-    officer:::print.rdocx(test_docx_p14_p4NA2, target = "test_docx_p14_p4NA2.docx")
-    file.remove("test_docx_p14_p4NA2.docx")
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
+
 
 
 
     testthat::expect_s3_class(object = {
-    test_docx_p14_p1NA2 <-
+    test_chart <-
       ex_survey1 %>%
       mutate(across(p_1, ~forcats::fct_recode(.x, NULL = "Strongly agree"))) %>%
       labelled::copy_labels_from(from = ex_survey1) %>%
       report_chart_likert(cols = p_1:p_4)
     }, class = "rdocx", exact = TRUE)
-    officer:::print.rdocx(test_docx_p14_p1NA2, target = "test_docx_p14_p1NA2.docx")
-    file.remove("test_docx_p14_p1NA2.docx")
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
+
 
 
 
     testthat::expect_s3_class(object = {
-    test_docx_a19_sporring <-
+    test_chart <-
       ex_survey1 %>%
       report_chart_likert(cols = a_1:a_9, digits = 0L, percent_sign = FALSE, font_family = "Calibri")
     }, class = "rdocx", exact = TRUE)
-    officer:::print.rdocx(test_docx_a19_sporring, target = "test_docx_a19_sporring.docx")
-    file.remove("test_docx_a19_sporring.docx")
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
+
 
 
 
     testthat::expect_s3_class(object = {
-    test_docx_a19_value_sort <-
+    test_chart <-
       ex_survey1 %>%
       report_chart_likert(cols = a_1:a_9, sort_by = "value", desc=FALSE, vertical=FALSE, showNA = "no")
     }, class = "rdocx", exact = TRUE)
-    officer:::print.rdocx(test_docx_a19_value_sort, target = "test_docx_a19_value_sort.docx")
-    file.remove("test_docx_a19_value_sort.docx")
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
+
 
 
 
 
     testthat::expect_s3_class(object = {
-    test_freq_a19_value_sort <-
+    test_chart <-
       ex_survey1 %>%
       report_chart_likert(cols = a_1:a_9, sort_by = "value", desc=T, vertical=FALSE, showNA = "no",
                           what = "fre")
     }, class = "rdocx", exact = TRUE)
-    officer:::print.rdocx(test_freq_a19_value_sort, target = "test_freq_a19_value_sort.docx")
-    file.remove("test_freq_a19_value_sort.docx")
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
+
 
 
 
     testthat::expect_s3_class(object = {
-    test_freq_b13_value_sort <-
+    test_chart <-
       ex_survey1 %>%
       report_chart_likert(cols = b_1:b_3, sort_by = "value", desc=T, vertical=FALSE, showNA = "no",
                           what = "fre")
     }, class = "rdocx", exact = TRUE)
-    officer:::print.rdocx(test_freq_b13_value_sort, target = "test_freq_b13_value_sort.docx")
-    file.remove("test_freq_b13_value_sort.docx")
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
+
 
 
     testthat::expect_s3_class(object = {
-    test_b13_value_sort_a_bit <-
+    test_chart <-
       ex_survey1 %>%
       report_chart_likert(cols = b_1:b_3, sort_by = "A bit", desc=FALSE, vertical=FALSE, showNA = "no")
     }, class = "rdocx", exact = TRUE)
-    officer:::print.rdocx(test_b13_value_sort_a_bit, target = "test_b13_value_sort_a_bit.docx")
-    file.remove("test_b13_value_sort_a_bit.docx")
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
+
 
 
     testthat::expect_s3_class(object = {
-    test_b13_value_sort_double <-
+    test_chart <-
       ex_survey1 %>%
       report_chart_likert(cols = b_1:b_3, sort_by = c("A bit", "A lot"), desc=FALSE, vertical=FALSE, showNA = "no")
     }, class = "rdocx", exact = TRUE)
-    officer:::print.rdocx(test_b13_value_sort_double, target = "test_b13_value_sort_double.docx")
-    file.remove("test_b13_value_sort_double.docx")
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
+
 
 
     testthat::expect_s3_class(object = {
-      test_b13_value_sort_double <-
+      test_chart <-
         ex_survey1 %>%
         report_chart_likert(cols = b_1:b_3, sort_by = c("A bit", "A lot"), desc=FALSE, vertical=FALSE, showNA = "no")
     }, class = "rdocx", exact = TRUE)
-    officer:::print.rdocx(test_b13_value_sort_double, target = "test_b13_value_sort_double.docx")
-    file.remove("test_b13_value_sort_double.docx")
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
+
 
 
     testthat::expect_s3_class(object = {
-      test_b13_hide <-
+      test_chart <-
         ex_survey1 %>%
         report_chart_likert(cols = b_1:b_3, hide_label_if_below = 10)
     }, class = "rdocx", exact = TRUE)
-    officer:::print.rdocx(test_b13_hide, target = "test_b13_hide.docx")
-    file.remove("test_b13_hide.docx")
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
+
+
+    testthat::expect_s3_class(object = {
+      test_chart <-
+        ex_survey1 %>%
+        report_chart_likert(cols = b_1:b_3, label_separator = " - ")
+    }, class = "rdocx", exact = TRUE)
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
 
   # testthat::expect_output_file(object =
-  #                                officer:::print.rdocx(test_docx8, target = "test8.docx"),
+  #                                officer:::print.rdocx(test_chart,
   # file = system.file("template","test8.docx", package = "surveyreport", mustWork = TRUE))
+
 })

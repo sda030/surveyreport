@@ -4,7 +4,13 @@
 \alias{sorter}
 \title{Internal: Finalizes dataset. Helper function.}
 \usage{
-sorter(data, sort_by = NULL, desc = FALSE, hide_label_if_below = 1)
+sorter(
+  data,
+  sort_by = NULL,
+  desc = FALSE,
+  hide_label_if_below = 1,
+  label_separator = NULL
+)
 }
 \arguments{
 \item{data}{Dataset}
@@ -14,6 +20,8 @@ sorter(data, sort_by = NULL, desc = FALSE, hide_label_if_below = 1)
 \item{desc}{Logical, defaults to ascending order (FALSE).}
 
 \item{hide_label_if_below}{[\code{numeric(1)}] Whether to hide label if below this value.}
+
+\item{label_separator}{Split pattern.}
 }
 \value{
 dataset

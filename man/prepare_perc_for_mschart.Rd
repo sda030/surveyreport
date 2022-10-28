@@ -12,7 +12,8 @@ prepare_perc_for_mschart(
   percent_sign = TRUE,
   sort_by = NULL,
   desc = FALSE,
-  hide_label_if_below = 1
+  hide_label_if_below = 1,
+  label_separator = NULL
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ prepare_perc_for_mschart(
 \item{desc}{Reverse sorting of sort_by}
 
 \item{hide_label_if_below}{[\code{numeric(1)}] Whether to hide label if below this value.}
+
+\item{label_separator}{Split pattern.}
 }
 \value{
 Dataset

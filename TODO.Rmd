@@ -14,8 +14,6 @@ knitr::opts_chunk$set(echo = TRUE)
 # Known bugs
 - mutate() has a bug where it drops the attributes
 
-# report_chart_likert()
-- Left adjustment seems impossible to fix in Word and mschart...
 
 # crosstable
 - missingness

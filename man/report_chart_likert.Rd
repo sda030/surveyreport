@@ -7,6 +7,7 @@
 report_chart_likert(
   data,
   cols = everything(),
+  by = NULL,
   showNA = "ifany",
   docx_template = NULL,
   label_font_size = 8,
@@ -18,6 +19,7 @@ report_chart_likert(
   height_per_col = 0.3,
   height_fixed = 1,
   chart_formatting = NULL,
+  caption_formatting = NULL,
   what = "percent",
   digits = 1,
   percent_sign = TRUE,
@@ -25,18 +27,22 @@ report_chart_likert(
   vertical = FALSE,
   desc = FALSE,
   hide_label_if_below = 1,
+  label_separator = NULL,
+  caption_autonum = NULL,
   seed = 1
 )
 }
 \arguments{
 \item{data}{Data frame or tibble.}
 
-\item{cols}{<tidy-select> Columns to select for reporting.}
+\item{cols}{Columns to select for reporting. Supports \code{\link[dplyr:dplyr_tidy_select]{tidy-select}}.}
 
-\item{showNA}{Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).}
+\item{by}{\code{\link[dplyr:dplyr_data_masking]{data-masking}}\cr. Optional column used to break graph by.}
+
+\item{showNA}{[\code{logical(1)>0}]\cr Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).}
 
 \item{docx_template}{[\code{character(1) || officer::read_docx()}]\cr
-Either a filepath to a template file, or a rdocx-object.}
+Either a filepath to a template file, or a rdocx-object from \link[officer]{read_docx}.}
 
 \item{label_font_size}{[\code{integer(1)}]\cr Font size for data labels}
 
@@ -55,24 +61,29 @@ Must contain at least the number of unique values (incl. missing) in the data se
 
 \item{height_fixed}{[\code{numeric(1)>0}]\cr Fixed height in cm.}
 
-\item{chart_formatting}{[\code{integer(1)}]\cr
-Which template style to be used for formatting chart?}
+\item{chart_formatting}{[\code{character(1)}]\cr Template style to be used for formatting chart}
+
+\item{caption_formatting}{[\code{character(1)}]\cr Template style to be used for formatting chart. Defaults to "Normal".}
 
 \item{what}{[\code{character(1)}] Either "percent" or "frequency". Supports partial matching.}
 
-\item{digits}{Number of decimal places as integer.}
+\item{digits}{[\code{integer(1)}]\cr Number of decimal places as integer.}
 
-\item{percent_sign}{Logical, whether to include percentage symbol on chart.}
+\item{percent_sign}{[\code{logical(1)>0}]\cr Whether to include percentage symbol on chart.}
 
 \item{sort_by}{[\code{character(1)}], sort output by "label", size of a category, or sum of categories (character vector). Defaults to none (NULL).}
 
-\item{vertical}{Logical. If FALSE (default), then horizontal.}
+\item{vertical}{[\code{logical(1)>0}]\cr If FALSE (default), then horizontal.}
 
-\item{desc}{Logical, sort in descending order?}
+\item{desc}{[\code{logical(1)>0}]\cr Sort in descending order?}
 
-\item{hide_label_if_below}{[\code{numeric(1)}] Whether to hide label if below this value.}
+\item{hide_label_if_below}{[\code{numeric(1)}]\cr Whether to hide label if below this value.}
 
-\item{seed}{Optional random seed for selection of colours in blender.}
+\item{label_separator}{[\code{character(1)}]\cr If not NULL (default), will split labels into main- and sub-questions and create figure caption.}
+
+\item{caption_autonum}{Object obtained from \link[officer]{run_autonum}.}
+
+\item{seed}{[\code{numeric(1)>0}]\cr Optional random seed for selection of colours in blender.}
 }
 \value{
 rdocx object, which can be saved with officer:::print.rdocx()

@@ -67,6 +67,7 @@ tabyl_multi <- function(dat,
 
 
 
+
 #' Tabulate categorical variables with proportions
 #'
 #' @param data data.frame with only variables you want included.
