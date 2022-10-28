@@ -289,6 +289,16 @@ test_that("report_chart_likert(what='percent')", {
     }, fileext = ".docx")
 
 
+
+    testthat::expect_s3_class(object = {
+      test_chart <-
+        ex_survey1 %>%
+        report_chart_likert(cols = b_1, by = x1_sex)
+    }, class = "rdocx", exact = TRUE)
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
   # testthat::expect_output_file(object =
   #                                officer:::print.rdocx(test_chart,
   # file = system.file("template","test8.docx", package = "surveyreport", mustWork = TRUE))

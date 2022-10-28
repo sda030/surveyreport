@@ -393,9 +393,35 @@ report_chart_likert <-
     if(!inherits(data, what = "data.frame")) {
       cli::cli_abort("data must be a {.cls data.frame} or {.cls tibble}.")
     }
+    data <- dplyr::select(data, {{cols}}, {{by}})
 
+
+    if(ncol(dplyr::select(data, {{by}}))==1L &&
+       ncol(dplyr::select(data, {{cols}}))==1L) {
+      new_vars <- c("__id", "__NA")
+      data <- dplyr::mutate(data, `__id` = seq_len(nrow(data)),
+                            `__NA` = !is.na({{by}}) & !is.na({{cols}}))
+      data <- tidyr::pivot_wider(data = data,
+                                 id_cols = tidyselect::all_of(new_vars),
+                                 names_from = {{by}},
+                                 values_from = {{cols}})
+      data <- dplyr::select(data, !tidyselect::all_of(c(new_vars)))
+
+      cols <- colnames(data)
+
+      data <- purrr::map(1:ncol(data), ~{
+        attr(data[[.x]], "label") <- cols[.x]
+        data[[.x]]
+      })
+      names(data) <- cols
+      data <- tibble::as_tibble(data)
+
+
+      cols <- rlang::as_quosure(cols)
+    }
     cols_enq <- rlang::enquo(cols)
     cols_pos <- tidyselect::eval_select(cols_enq, data = data)
+    # View(data)
 
     check_category_pairs(data = data, cols_pos = cols_pos)
 
@@ -415,6 +441,7 @@ report_chart_likert <-
 
 
     # Refactor by using list() and rlang::exec()?
+
 
 
     if(grepl("^per", what)) {
@@ -447,7 +474,6 @@ report_chart_likert <-
                           vertical = vertical,
                           what = what,
                           seed = seed)
-
 
 
     if(!is.null(label_separator) &&
