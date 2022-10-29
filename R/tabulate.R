@@ -64,7 +64,18 @@ tabyl_multi <- function(dat,
 }
 
 
-
+crosstable_list <- function(data, col, by, showNA = "ifany") {
+  data |>
+    dplyr::select({{col}}, {{by}}) |>
+    tidyr::pivot_wider(
+      names_from = {{by}},
+      values_from = {{col}},
+      values_fn = ~list(.x)) |>
+    purrr::map(.f = ~{as.data.frame(table(.x[[1]], useNA = showNA))}) |>
+    dplyr::bind_rows(.id = "label") |>
+    dplyr::rename(variable = "Var1", value = "Freq") |>
+    dplyr::mutate(.id = .data$label)
+}
 
 
 

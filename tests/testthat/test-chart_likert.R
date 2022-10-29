@@ -1,46 +1,66 @@
-test_that("prepare_perc_for_mschart", {
+test_that("prepare_mschart", {
   testthat::expect_equal(
-    surveyreport:::prepare_perc_for_mschart(
-      data = ex_survey1[, paste0("a_", 1:9)],
-      digits = 0, percent_sign = FALSE)[1,"data_label"],
+    surveyreport:::prepare_mschart_data(
+      data = ex_survey1,
+      cols = a_1:a_9,
+      what = "per",
+      digits = 0, percent_sign = FALSE) %>%
+      dplyr::slice(1) %>% dplyr::pull(data_label),
     expected = "49")
 
   testthat::expect_equal(
-    surveyreport:::prepare_perc_for_mschart(
-      data = ex_survey1[, paste0("a_", 1:9)],
-      sort_by = "value", desc = T)[1,4],
+    surveyreport:::prepare_mschart_data(
+      data = ex_survey1,
+      cols = a_1:a_9,
+      what = "per",
+      sort_by = "value", desc = T) %>%
+      dplyr::slice(1) %>% dplyr::pull(value),
     expected = 60)
 
   testthat::expect_equal(
-    surveyreport:::prepare_perc_for_mschart(
-      data = ex_survey1[, paste0("b_", 1:3)],
-      sort_by = "A bit", desc = FALSE)[5,4],
+    surveyreport:::prepare_mschart_data(
+      data = ex_survey1,
+      cols = b_1:b_3,
+      what = "per",
+      sort_by = "A bit", desc = FALSE) %>%
+      dplyr::slice(5) %>% dplyr::pull(value),
     expected = 42)
 
   testthat::expect_equal(
-    surveyreport:::prepare_perc_for_mschart(
-      data = ex_survey1[, paste0("b_", 1:3)],
-      sort_by = c("A bit", "A lot"), desc = FALSE)[9,"sum_value"],
+    surveyreport:::prepare_mschart_data(
+      data = ex_survey1,
+      cols = b_1:b_3,
+      what = "per",
+      sort_by = c("A bit", "A lot"), desc = FALSE) %>%
+      dplyr::slice(9) %>% dplyr::pull(sum_value),
     expected = 60)
 
   testthat::expect_equal(
-    surveyreport:::prepare_perc_for_mschart(
-      data = ex_survey1[, paste0("b_", 1:3)], hide_label_if_below = 10)[3,"data_label"],
+    surveyreport:::prepare_mschart_data(
+      data = ex_survey1,
+      cols = b_1:b_3,
+      what = "per",
+      hide_label_if_below = 10) %>%
+      dplyr::slice(3) %>% dplyr::pull(data_label),
     expected = "")
-})
 
-test_that("prepare_freq_for_mschart", {
-  testthat::expect_equal(surveyreport:::prepare_freq_for_mschart(
-    data = ex_survey1[, paste0("a_", 1:9)], showNA = "no")[1,"data_label"],
+  testthat::expect_equal(surveyreport:::prepare_mschart_data(
+    data = ex_survey1,
+    cols = a_1:a_9,
+    what = "fre", showNA = "no") %>%
+      dplyr::slice(1) %>% dplyr::pull(data_label),
     "49")
 
   testthat::expect_equal(
-    surveyreport:::prepare_perc_for_mschart(
-      data = ex_survey1[, paste0("a_", 1:9)],
-      sort_by = "value", desc = T)[1,4],
+    surveyreport:::prepare_mschart_data(
+      data = ex_survey1,
+      cols = a_1:a_9,
+      what = "fre",
+      sort_by = "value", desc = T) %>%
+      dplyr::slice(1) %>% dplyr::pull(value),
     expected = 60)
 })
-
+#########################################################
 
 
 test_that("report_chart_likert(what='percent')", {
@@ -298,6 +318,24 @@ test_that("report_chart_likert(what='percent')", {
     withr::with_tempfile(new = "test", code = {
       officer:::print.rdocx(test_chart, target = "test.docx")
     }, fileext = ".docx")
+
+
+
+    testthat::expect_s3_class(object = {
+      test_chart <-
+        ex_survey1 %>%
+        report_chart_likert(cols = b_1, by = x1_sex, sort_by = "A lot", desc=T)
+    }, class = "rdocx", exact = TRUE)
+    withr::with_tempfile(new = "test", code = {
+      officer:::print.rdocx(test_chart, target = "test.docx")
+    }, fileext = ".docx")
+
+
+    testthat::expect_error(object = {
+      test_chart <-
+        ex_survey1 %>%
+        report_chart_likert(cols = b_1, by = x1_sex:x2_human)
+    }, regexp = "Too many columns provided for `by`")
 
   # testthat::expect_output_file(object =
   #                                officer:::print.rdocx(test_chart,

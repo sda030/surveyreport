@@ -1,113 +1,30 @@
-
-#' Title
-#'
-#' @param data Data frame.
-#' @param showNA "ifany", "always", "no"
-#' @importFrom crosstable crosstable
-#' @return data frame.
-#'
-#' @examples
-cross_n <- function(data, showNA="ifany") {
-  data <- crosstable::crosstable(data = data,
-                                 percent_pattern = "{n}",
-                                 showNA = showNA,
-                                 label = TRUE)
-
-  data <- as.data.frame(data)
-  data$value <- as.integer(data$value)
-  data
-}
-
-
-
-#' Internal: Finalizes dataset. Helper function.
-#'
-#' @param data Dataset
-#' @param sort_by [\code{character(1)}], sort output by "label", size of a category, or sum of categories (character vector). Defaults to none (NULL).
-#' @param desc Logical, defaults to ascending order (FALSE).
-#' @param hide_label_if_below [\code{numeric(1)}] Whether to hide label if below this value.
-#' @param label_separator Split pattern.
-#'
-#' @importFrom rlang .env
-#' @importFrom dplyr mutate group_by arrange ungroup if_else desc n_distinct
-#' @importFrom stats ave
-#' @return dataset
-#'
-#' @examples
-sorter <- function(data, sort_by=NULL, desc=FALSE,
-                   hide_label_if_below = 1,
-                   label_separator = NULL) {
-
-
-  data$n_unique <- ave(x = data$variable, data$label,
-                       FUN = function(x) dplyr::n_distinct(x, na.rm = FALSE))
-  fct_max <- max(data$n_unique, na.rm = TRUE)
-  fct_uniques <- unique(data[data$n_unique == fct_max, "variable"])
-  data <- dplyr::mutate(data,
-                        n_unique = NULL,
-                        variable = factor(x = .data$variable,
-                                          levels = .env$fct_uniques),
-                        cat_id = .data$variable %in% sort_by)
-  if(!is.null(sort_by)) {
-
-    if(all(sort_by %in% names(data))) {
-      sort_col <- sort_by
-    } else if(all(sort_by %in% unique(data$variable))) {
-      sort_col <- "sum_value"
-    }
-    data <- dplyr::group_by(data, .data$label, .data$cat_id)
-    data <- dplyr::mutate(data,
-                          sum_value =
-                            dplyr::if_else(.data$cat_id,
-                                           sum(as.numeric(.data$value), na.rm=TRUE),
-                                           NA_real_))
-    data <- dplyr::ungroup(data)
-    data <-
-      dplyr::arrange(data,
-                     dplyr::desc(.data$cat_id),
-                     if(desc) dplyr::desc(.data[[sort_col]]) else .data[[sort_col]])
-  }
-  lvls <- unique(as.character(data$label))
-  lbls <-
-    if(!is.null(label_separator)) stringr::str_replace(
-      string = lvls,
-      pattern = paste0("^(.*)", label_separator, "(.*)$"),
-      replacement = "\\2") else lvls
-  data <- dplyr::mutate(data,
-                        label = factor(x = .data$label,
-                                       levels = lvls, labels = lbls,
-                                       ordered = TRUE),
-                        data_label =
-                          dplyr::if_else(as.numeric(.data$value) <
-                                           as.numeric(.env$hide_label_if_below),
-                                         "",
-                                         as.character(.data$data_label)))
-  data <- dplyr::arrange(data, as.integer(.data$label), .data$variable)
-  as.data.frame(data)
-}
-
-
-
 #' Helper Function to Prepare Data for create_chart_likert
 #'
 #' @param data Dataset
-#' @param showNA Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).
-#' @param digits Number of decimal places as integer.
-#' @param percent_sign Logical, whether to include percentage symbol on chart.
+#' @param cols Columns to select for reporting. Supports \code{\link[dplyr:dplyr_tidy_select]{tidy-select}}.
+#' @param by \code{\link[dplyr:dplyr_data_masking]{data-masking}}\cr. Optional column used to break graph by.
+#' @param showNA [\code{logical(1)}]\cr Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).
+#' @param digits [\code{integer(1)}]\cr Number of decimal places as integer.
+#' @param percent_sign [\code{logical(1)}]\cr Whether to include percentage symbol on chart.
 #' @param sort_by [\code{character(1)}], sort output by "label", size of a category, or sum of categories (character vector). Defaults to none (NULL).
-#' @param desc Reverse sorting of sort_by
+#' @param desc [\code{logical(1)}]\cr Reverse sorting of sort_by. Defaults to ascending order (FALSE).
 #' @param call Error call function, usually not needed.
 #' @param hide_label_if_below [\code{numeric(1)}] Whether to hide label if below this value.
-#' @param label_separator Split pattern.
+#' @param label_separator [\code{character(1)}]\cr Split pattern.
+#' @param what [\code{character(1)}]\cr Whether to compute "percentage" (default) or "frequency". Supports partial matching.
 #'
-#' @importFrom rlang arg_match caller_env is_integerish
+#' @importFrom rlang arg_match caller_env is_integerish .env
+#' @importFrom dplyr mutate group_by arrange ungroup if_else desc n_distinct
 #' @importFrom cli cli_abort
 #' @importFrom stringr str_c
 #' @importFrom stats ave
 #'
 #' @return Dataset
-prepare_perc_for_mschart <-
+prepare_mschart_data <-
   function(data,
+           cols,
+           by = NULL,
+           what = "percent",
            showNA = "ifany",
            call = rlang::caller_env(),
            digits = 1,
@@ -117,55 +34,95 @@ prepare_perc_for_mschart <-
            hide_label_if_below = 1,
            label_separator = NULL) {
     rlang::arg_match(showNA, values = c("ifany", "always", "no"), multiple = FALSE, error_call = call)
-    if(!rlang::is_integerish(digits)) cli::cli_abort("{.arg digits} must be {.cls {integer(1)}}.")
-    data <- cross_n(data, showNA)
+    if(!rlang::is_integerish(digits)) cli::cli_abort("{.arg digits} must be {.cls {integer(1)}}.", call = call)
+    fmt <- stringr::str_c("%.", digits, "f", if(percent_sign) "%%")
 
-    data$data_label <-
-      stats::ave(x = data$value,
-                 data$label,
-                 FUN = function(x) {
-                   fmt <- stringr::str_c("%.",digits, "f", if(percent_sign) "%%")
-                   sprintf(fmt = fmt, x/sum(x, na.rm = T)*100)
-                 })
-    data <- sorter(data = data, sort_by=sort_by, desc=desc,
-                   hide_label_if_below = hide_label_if_below,
-                   label_separator = label_separator)
+
+
+    if(ncol(dplyr::select(.data = data, {{by}})) == 1L &&
+       ncol(dplyr::select(.data = data, {{cols}})) == 1L) {
+      data <- crosstable_list(data, col = {{cols}}, by = {{by}},
+                              showNA = showNA)
+    } else if(ncol(dplyr::select(.data = data, {{by}})) == 0L &&
+              ncol(dplyr::select(.data = data, {{cols}})) >= 1L) {
+      data <- dplyr::select(data, {{cols}})
+      data <- crosstable::crosstable(data = data,
+                                     percent_pattern = "{n}",
+                                     showNA = showNA,
+                                     label = TRUE)
+    } else if(ncol(dplyr::select(.data = data, {{by}})) > 1L) {
+      cli::cli_abort(c("Too many columns provided for {.arg by}.",
+                       i="Only 1 by-column is currently allowed."))
+    }
+
+    data <- dplyr::mutate(data,
+                          value = as.integer(.data$value))
+
+    if(grepl("per", what)) {
+      data <- dplyr::group_by(.data = data, .data$label)
+      data <- dplyr::mutate(data,
+                            data_label = .data$value/sum(.data$value, na.rm=TRUE)*100,
+                            data_label = sprintf(fmt = fmt, .data$data_label))
+      data <- dplyr::ungroup(x = data)
+    } else if(grepl("fre", what)) {
+      data <- dplyr::mutate(data,
+                            data_label = as.character(.data$value))
+    } else cli::cli_abort("Invalid {.arg what}. Must be either {.var percent} or {.var frequency}.")
+
+    data <- dplyr::group_by(.data = data, .data$label)
+    data <- dplyr::mutate(.data = data,
+                          n_unique = dplyr::n_distinct(.data$variable, na.rm=FALSE))
+    data <- dplyr::ungroup(x = data)
+
+    fct_max <- max(data$n_unique, na.rm = TRUE)
+    fct_uniques <- dplyr::filter(.data = data, .data$n_unique == .env$fct_max)
+    fct_uniques <- unique(dplyr::pull(.data = data, .data$variable))
+    data <- dplyr::mutate(data,
+                          n_unique = NULL,
+                          variable = factor(x = .data$variable,
+                                            levels = .env$fct_uniques),
+                          cat_id = .data$variable %in% .env$sort_by)
+    if(!is.null(sort_by)) {
+
+      # print(unique(data$variable))
+      if(all(sort_by %in% names(data))) {
+        sort_col <- sort_by
+      } else if(all(sort_by %in% unique(data$variable))) {
+        sort_col <- "sum_value"
+      }
+      data <- dplyr::group_by(data, .data$label, .data$cat_id)
+      data <- dplyr::mutate(data,
+                            sum_value =
+                              dplyr::if_else(.data$cat_id,
+                                             sum(as.numeric(.data$value), na.rm=TRUE),
+                                             NA_real_))
+      data <- dplyr::ungroup(x = data)
+      data <-
+        dplyr::arrange(data,
+                       dplyr::desc(.data$cat_id),
+                       if(desc) dplyr::desc(.data[[sort_col]]) else .data[[sort_col]])
+    }
+    lvls <- unique(as.character(data$label))
+    lbls <-
+      if(!is.null(label_separator)) stringr::str_replace(
+        string = lvls,
+        pattern = paste0("^(.*)", label_separator, "(.*)$"),
+        replacement = "\\2") else lvls
+    data <- dplyr::mutate(data,
+                          label = factor(x = .data$label,
+                                         levels = .env$lvls,
+                                         labels = .env$lbls,
+                                         ordered = TRUE),
+                          data_label =
+                            dplyr::if_else(as.numeric(.data$value) <
+                                             as.numeric(.env$hide_label_if_below),
+                                           "",
+                                           as.character(.data$data_label)))
+    data <- dplyr::arrange(data, as.integer(.data$label), .data$variable)
     data
   }
 
 
-#' Helper Function to Prepare Frequency Data for create_chart_likert
-#'
-#' @param data Dataset
-#' @param showNA Whether to show NA in categorical variables (one of c("ifany", "always", "no"), like in table()).
-#' @param sort_by [\code{character(1)}], sort output by "label", size of a category, or sum of categories (character vector). Defaults to none (NULL).
-#' @param desc Reverse sorting of sort_by
-#' @param call Error call function, usually not needed.
-#' @param hide_label_if_below [\code{numeric(1)}] Whether to hide label if below this value.
-#' @param label_separator Split pattern.
-#'
-#' @importFrom rlang arg_match caller_env
-#' @importFrom cli cli_abort
-#'
-#' @return Dataset
-prepare_freq_for_mschart <-
-  function(data,
-           showNA = "ifany",
-           call = rlang::caller_env(),
-           sort_by = NULL,
-           desc = FALSE,
-           hide_label_if_below = 1,
-           label_separator = NULL) {
-    rlang::arg_match(showNA, values = c("ifany", "always", "no"), multiple = FALSE, error_call = call)
-    data <- cross_n(data, showNA)
-
-    data$data_label <- as.character(data$value)
-    data <- sorter(data=data, sort_by=sort_by, desc=desc,
-                   hide_label_if_below = hide_label_if_below,
-                   label_separator = label_separator)
-
-    data
-  }
 
 #' Create Likert Chart from Descriptives Data Frame
 #'
@@ -396,72 +353,45 @@ report_chart_likert <-
     data <- dplyr::select(data, {{cols}}, {{by}})
 
 
-    if(ncol(dplyr::select(data, {{by}}))==1L &&
-       ncol(dplyr::select(data, {{cols}}))==1L) {
-      new_vars <- c("__id", "__NA")
-      data <- dplyr::mutate(data, `__id` = seq_len(nrow(data)),
-                            `__NA` = !is.na({{by}}) & !is.na({{cols}}))
-      data <- tidyr::pivot_wider(data = data,
-                                 id_cols = tidyselect::all_of(new_vars),
-                                 names_from = {{by}},
-                                 values_from = {{cols}})
-      data <- dplyr::select(data, !tidyselect::all_of(c(new_vars)))
+    # if(ncol(dplyr::select(.data = data, {{by}})) == 1L &&
+    #    ncol(dplyr::select(.data = data, {{cols}})) == 1L) {
 
-      cols <- colnames(data)
+      # new_vars <- c("__id", "__NA")
+      # data <- dplyr::mutate(.data = data,
+      #                       `__id` = seq_len(nrow(data)),
+      #                       `__NA` = !is.na({{by}}) & !is.na({{cols}}))
+      # data <- tidyr::pivot_wider(data = data,
+      #                            # id_cols = tidyselect::all_of(new_vars),
+      #                            names_from = {{by}},
+      #                            values_from = {{cols}})
+      # data <- dplyr::select(.data = data,
+      #                       !tidyselect::all_of(c(new_vars)))
 
-      data <- purrr::map(1:ncol(data), ~{
-        attr(data[[.x]], "label") <- cols[.x]
-        data[[.x]]
-      })
-      names(data) <- cols
-      data <- tibble::as_tibble(data)
+      # cols <- rlang::as_quosure(x = colnames(data))
+      # data <- set_var_labels(data = data)
+    # }
 
-
-      cols <- rlang::as_quosure(cols)
-    }
-    cols_enq <- rlang::enquo(cols)
+    cols_enq <- rlang::enquo(arg = cols)
     cols_pos <- tidyselect::eval_select(cols_enq, data = data)
-    # View(data)
+    by_enq <- rlang::enquo(arg = by)
+    by_pos <- tidyselect::eval_select(by_enq, data = data)
 
-    check_category_pairs(data = data, cols_pos = cols_pos)
-
-
-    split_pat <- paste0("(^.*)", label_separator, "(.*$)")
-
-    docx_file <- use_docx(docx_template = docx_template)
-    docx_dims <- officer::docx_dim(docx_file)
-    docx_dims <- c(w =
-                     docx_dims$page[["width"]] -
-                     docx_dims$margins[["left"]] -
-                     docx_dims$margins[["right"]],
-                   h =
-                     docx_dims$page[["height"]] -
-                     docx_dims$margins[["top"]] -
-                     docx_dims$margins[["bottom"]])
+    check_category_pairs(data = data, cols_pos = c(cols_pos))
 
 
-    # Refactor by using list() and rlang::exec()?
+    data_out <-
+      prepare_mschart_data(data = data,
+                           cols = {{cols}},
+                           by = {{by}},
+                           what = what,
+                           showNA = showNA,
+                           sort_by = sort_by,
+                           desc = desc,
+                           hide_label_if_below = hide_label_if_below,
+                           label_separator = label_separator,
+                           percent_sign = percent_sign,
+                           digits = digits)
 
-
-
-    if(grepl("^per", what)) {
-
-      data_out <- prepare_perc_for_mschart(data = data[, cols_pos],
-                                       showNA = showNA,
-                                       sort_by = sort_by,
-                                       desc = desc,
-                                       hide_label_if_below = hide_label_if_below,
-                                       label_separator = label_separator,
-                                       percent_sign = percent_sign,
-                                       digits = digits)
-    } else if(grepl("^fre", what)) {
-      data_out <- prepare_freq_for_mschart(data = data[, cols_pos],
-                                       showNA = showNA,
-                                       sort_by = sort_by,
-                                       desc = desc,
-                                       hide_label_if_below = hide_label_if_below,
-                                       label_separator = label_separator)
-    } else cli::cli_abort("{.arg what} must be either {.var percent} or {.var frequency}.")
 
     chart <-
       create_chart_likert(data = data_out,
@@ -475,19 +405,14 @@ report_chart_likert <-
                           what = what,
                           seed = seed)
 
+    docx_file <- use_docx(docx_template = docx_template)
+
 
     if(!is.null(label_separator) &&
        rlang::is_bare_character(x = label_separator, n = 1)) {
-
-
-      main_question <- purrr::map_chr(data[, cols_pos], ~attr(.x, "label"))
-      main_question <- unname(main_question)
       main_question <-
-        stringr::str_replace(string = main_question,
-                             pattern = split_pat, replacement = "\\1")
-      main_question <- unique(main_question)
-      main_question <-
-        stringr::str_c(main_question, collapse="\n")
+        get_main_question(data = data, cols_pos = cols_pos,
+                        label_separator = label_separator)
 
       caption_formatting <-
         if(!is.null(caption_formatting)) caption_formatting else "Normal"
@@ -497,12 +422,11 @@ report_chart_likert <-
                                style = caption_formatting,
                                autonum = caption_autonum)
 
-
       officer::body_add_caption(x = docx_file, value = block_caption)
     }
 
 
-
+    docx_dims <- get_docx_dims(docx_file)
     determine_height <-
       min(c(height_fixed + height_per_col*length(cols_pos),
             docx_dims[["h"]]))

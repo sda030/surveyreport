@@ -507,3 +507,41 @@ use_docx <- function(docx_template = NULL) {
     } else docx_template
   } else officer::read_docx()
 }
+
+
+get_docx_dims <- function(docx_file) {
+  docx_dims <- officer::docx_dim(docx_file)
+  docx_dims <- c(w =
+                   docx_dims$page[["width"]] -
+                   docx_dims$margins[["left"]] -
+                   docx_dims$margins[["right"]],
+                 h =
+                   docx_dims$page[["height"]] -
+                   docx_dims$margins[["top"]] -
+                   docx_dims$margins[["bottom"]])
+}
+
+get_main_question <-
+  function(data, cols_pos, label_separator) {
+  x <- purrr::map_chr(data[, cols_pos], ~attr(.x, "label"))
+  x <- unname(x)
+  x <-
+    stringr::str_replace(string = x,
+                         pattern = paste0("(^.*)", label_separator, "(.*$)"),
+                         replacement = "\\1")
+  x <- unique(x)
+  x <-
+    stringr::str_c(x, collapse="\n")
+  x
+}
+
+
+set_var_labels <- function(data) {
+  col_names <- colnames(data)
+  data <- purrr::map(seq_len(ncol(data)), ~{
+    attr(data[[.x]], "label") <- col_names[.x]
+    data[[.x]]
+  })
+  names(data) <- col_names
+  tibble::as_tibble(x = data)
+}
