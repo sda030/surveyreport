@@ -1,7 +1,7 @@
 Type: Package
 Package: surveyreport
 Title: Automatic Reports in Office Format Based on Tidy Specifications
-Version: 0.1.0
+Version: 0.1.0.9001
 Authors@R: 
     person(given = "Stephan", 
            family = "Daus", 
@@ -22,6 +22,7 @@ Imports:
     checkmate,
     crosstable,
     dplyr,
+    flextable,
     labelled,
     lavaan,
     infer,

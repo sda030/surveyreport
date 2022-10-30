@@ -19,7 +19,7 @@ report_chart_likert(
   height_per_col = 0.3,
   height_fixed = 1,
   chart_formatting = NULL,
-  caption_formatting = NULL,
+  caption_style = NULL,
   what = "percent",
   digits = 1,
   percent_sign = TRUE,
@@ -48,7 +48,7 @@ Either a filepath to a template file, or a rdocx-object from \link[officer]{read
 
 \item{main_font_size}{[\code{integer(1)}]\cr Font size for all other text}
 
-\item{font_family}{Office font family. Defaults to "Arial". See ?officer::fp_text() for options.}
+\item{font_family}{[\code{character(1)}]\cr Office font family. Defaults to "Arial". See ?officer::fp_text() for options.}
 
 \item{colour_palette}{[\code{character()}]\cr
 Must contain at least the number of unique values (incl. missing) in the data set.}
@@ -63,7 +63,7 @@ Must contain at least the number of unique values (incl. missing) in the data se
 
 \item{chart_formatting}{[\code{character(1)}]\cr Template style to be used for formatting chart}
 
-\item{caption_formatting}{[\code{character(1)}]\cr Template style to be used for formatting chart. Defaults to "Normal".}
+\item{caption_style}{[\code{character(1)}]\cr Template style to be used for formatting chart. Defaults to "Normal".}
 
 \item{what}{[\code{character(1)}] Either "percent" or "frequency". Supports partial matching.}
 

@@ -521,20 +521,35 @@ get_docx_dims <- function(docx_file) {
                    docx_dims$margins[["bottom"]])
 }
 
-get_main_question <-
-  function(data, cols_pos, label_separator) {
-  x <- purrr::map_chr(data[, cols_pos], ~attr(.x, "label"))
-  x <- unname(x)
-  x <-
-    stringr::str_replace(string = x,
-                         pattern = paste0("(^.*)", label_separator, "(.*$)"),
-                         replacement = "\\1")
-  x <- unique(x)
-  x <-
-    stringr::str_c(x, collapse="\n")
-  x
-}
+# get_main_question <-
+#   function(data, cols_pos, label_separator) {
+#   x <- purrr::map_chr(data[, cols_pos], ~attr(.x, "label"))
+#   x <- unname(x)
+#   x <-
+#     stringr::str_replace(string = x,
+#                          pattern = paste0("(^.*)", label_separator, "(.*$)"),
+#                          replacement = "\\1")
+#   x <- unique(x)
+#   x <-
+#     stringr::str_c(x, collapse="\n")
+#   x
+# }
 
+
+get_main_question2 <-
+  function(x, label_separator, call=rlang::caller_env()) {
+    if(!(is.character(x) | is.factor(x) | is.ordered(x))) {
+      cli::cli_abort(c(x="{.arg x} must be of type {.cls character} or {.cls factor}.",
+                       i="{.arg x} is {.cls {class(x)}}."),
+                     call = call)
+    }
+    x <-
+      stringr::str_replace(string = x,
+                           pattern = paste0("(^.*)", label_separator, "(.*$)"),
+                           replacement = "\\1")
+    x <- unique(x)
+    stringr::str_c(x, collapse="\n")
+  }
 
 set_var_labels <- function(data) {
   col_names <- colnames(data)

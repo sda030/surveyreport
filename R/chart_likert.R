@@ -84,7 +84,6 @@ prepare_mschart_data <-
                           cat_id = .data$variable %in% .env$sort_by)
     if(!is.null(sort_by)) {
 
-      # print(unique(data$variable))
       if(all(sort_by %in% names(data))) {
         sort_col <- sort_by
       } else if(all(sort_by %in% unique(data$variable))) {
@@ -254,7 +253,7 @@ create_chart_likert <-
 #' Either a filepath to a template file, or a rdocx-object from \link[officer]{read_docx}.
 #' @param label_font_size [\code{integer(1)}]\cr Font size for data labels
 #' @param main_font_size [\code{integer(1)}]\cr Font size for all other text
-#' @param font_family Office font family. Defaults to "Arial". See ?officer::fp_text() for options.
+#' @param font_family [\code{character(1)}]\cr Office font family. Defaults to "Arial". See ?officer::fp_text() for options.
 #' @param colour_palette [\code{character()}]\cr
 #' Must contain at least the number of unique values (incl. missing) in the data set.
 #' @param colour_na [\code{character(1)}]\cr Colour as a single string, for NA-values.
@@ -271,7 +270,7 @@ create_chart_likert <-
 #' @param hide_label_if_below [\code{numeric(1)}]\cr Whether to hide label if below this value.
 #' @param seed [\code{numeric(1)>0}]\cr Optional random seed for selection of colours in blender.
 #' @param label_separator [\code{character(1)}]\cr If not NULL (default), will split labels into main- and sub-questions and create figure caption.
-#' @param caption_formatting [\code{character(1)}]\cr Template style to be used for formatting chart. Defaults to "Normal".
+#' @param caption_style [\code{character(1)}]\cr Template style to be used for formatting chart. Defaults to "Normal".
 #' @param caption_autonum Object obtained from \link[officer]{run_autonum}.
 #'
 #' @importFrom tidyselect everything eval_select
@@ -335,7 +334,7 @@ report_chart_likert <-
            height_per_col = .3,
            height_fixed = 1,
            chart_formatting = NULL,
-           caption_formatting = NULL,
+           caption_style = NULL,
            what = "percent",
            digits = 1,
            percent_sign = TRUE,
@@ -352,24 +351,6 @@ report_chart_likert <-
     }
     data <- dplyr::select(data, {{cols}}, {{by}})
 
-
-    # if(ncol(dplyr::select(.data = data, {{by}})) == 1L &&
-    #    ncol(dplyr::select(.data = data, {{cols}})) == 1L) {
-
-      # new_vars <- c("__id", "__NA")
-      # data <- dplyr::mutate(.data = data,
-      #                       `__id` = seq_len(nrow(data)),
-      #                       `__NA` = !is.na({{by}}) & !is.na({{cols}}))
-      # data <- tidyr::pivot_wider(data = data,
-      #                            # id_cols = tidyselect::all_of(new_vars),
-      #                            names_from = {{by}},
-      #                            values_from = {{cols}})
-      # data <- dplyr::select(.data = data,
-      #                       !tidyselect::all_of(c(new_vars)))
-
-      # cols <- rlang::as_quosure(x = colnames(data))
-      # data <- set_var_labels(data = data)
-    # }
 
     cols_enq <- rlang::enquo(arg = cols)
     cols_pos <- tidyselect::eval_select(cols_enq, data = data)
@@ -410,16 +391,17 @@ report_chart_likert <-
 
     if(!is.null(label_separator) &&
        rlang::is_bare_character(x = label_separator, n = 1)) {
-      main_question <-
-        get_main_question(data = data, cols_pos = cols_pos,
-                        label_separator = label_separator)
 
-      caption_formatting <-
-        if(!is.null(caption_formatting)) caption_formatting else "Normal"
+      main_question <-
+        get_main_question2(x = data_out$label,
+                          label_separator = label_separator)
+
+      caption_style <-
+        if(!is.null(caption_style)) caption_style else "Normal"
 
       block_caption <-
         officer::block_caption(label = main_question,
-                               style = caption_formatting,
+                               style = caption_style,
                                autonum = caption_autonum)
 
       officer::body_add_caption(x = docx_file, value = block_caption)

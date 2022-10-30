@@ -11,13 +11,13 @@
 #'
 #' @examples tabyl_lab(mtcars, cyl)
 tabyl_lab <- function(dat, ..., show_na=TRUE, show_missing_levels=TRUE) {
-	if(any(class(dat) %in% c("data.frame", "tbl"))) {
-		dat <- mutate(dat, across(everything(), .fns=~labelled::to_factor(.x)))
-		janitor::tabyl(dat, ..., show_na = show_na, show_missing_levels = show_missing_levels)
-	} else {
-		dat <- labelled::to_factor(dat)
-		janitor::tabyl(dat, show_na = show_na, show_missing_levels = show_missing_levels, ...)
-	}
+  if(any(class(dat) %in% c("data.frame", "tbl"))) {
+    dat <- mutate(dat, across(everything(), .fns=~labelled::to_factor(.x)))
+    janitor::tabyl(dat, ..., show_na = show_na, show_missing_levels = show_missing_levels)
+  } else {
+    dat <- labelled::to_factor(dat)
+    janitor::tabyl(dat, show_na = show_na, show_missing_levels = show_missing_levels, ...)
+  }
 }
 
 #' Generate multiple 1-way frequency tables that share the same response scale.
@@ -37,30 +37,30 @@ tabyl_lab <- function(dat, ..., show_na=TRUE, show_missing_levels=TRUE) {
 #' @examples tabyl_multi(ex_survey1[,paste0("a_", 1:9)])
 
 tabyl_multi <- function(dat,
-						show_na=TRUE, show_missing_levels=TRUE, var_label=NULL) {
-	if(!any(class(dat) %in% c("data.frame", "tbl"))) rlang::abort("dat must be a data.frame or tibble for this trick to work.")
-	var_names <- names(dat)
-	var_labels <- labelled::var_label(dat, unlist = TRUE)
-	val_labels <- labelled::val_labels(dat)
+                        show_na=TRUE, show_missing_levels=TRUE, var_label=NULL) {
+  if(!any(class(dat) %in% c("data.frame", "tbl"))) rlang::abort("dat must be a data.frame or tibble for this trick to work.")
+  var_names <- names(dat)
+  var_labels <- labelled::var_label(dat, unlist = TRUE)
+  val_labels <- labelled::val_labels(dat)
 
-	check_dissimilarity1 <- length(unique(gsub("^(.*) - .*$", "\\1", var_labels)))>1L
-	if(check_dissimilarity1) rlang::warn("Seems you have more than one type of label.")
+  check_dissimilarity1 <- length(unique(gsub("^(.*) - .*$", "\\1", var_labels)))>1L
+  if(check_dissimilarity1) rlang::warn("Seems you have more than one type of label.")
 
-	identicalValue <- function(x,y) if (identical(x,y)) x else rlang::abort("Seems you have different sets of labels.")
-	Reduce(identicalValue,val_labels)
+  identicalValue <- function(x,y) if (identical(x,y)) x else rlang::abort("Seems you have different sets of labels.")
+  Reduce(identicalValue,val_labels)
 
-	x <- if(!is.null(var_label) && var_label) {
-		rlang::set_names(dat, nm = var_labels)
-	} else if(!is.null(var_label) && !var_label) {
-		dat
-	} else if(is.null(var_label)) {
-		rlang::set_names(dat, nm = paste(var_names, "-", var_labels))
-	}
+  x <- if(!is.null(var_label) && var_label) {
+    rlang::set_names(dat, nm = var_labels)
+  } else if(!is.null(var_label) && !var_label) {
+    dat
+  } else if(is.null(var_label)) {
+    rlang::set_names(dat, nm = paste(var_names, "-", var_labels))
+  }
 
-	x <- purrr::map2_dfr(.x = x, .y=names(x), .id = "var",
-				  .f = ~tabyl_lab(dat = .x, show_na = show_na, show_missing_levels = show_missing_levels))
-	x <- tidyr::pivot_wider(data = x, id_cols = .data$var, names_from = .data$dat, values_from = .data$n)
-	janitor::as_tabyl(x)
+  x <- purrr::map2_dfr(.x = x, .y=names(x), .id = "var",
+                       .f = ~tabyl_lab(dat = .x, show_na = show_na, show_missing_levels = show_missing_levels))
+  x <- tidyr::pivot_wider(data = x, id_cols = .data$var, names_from = .data$dat, values_from = .data$n)
+  janitor::as_tabyl(x)
 }
 
 
@@ -77,6 +77,71 @@ crosstable_list <- function(data, col, by, showNA = "ifany") {
     dplyr::mutate(.id = .data$label)
 }
 
+#' Title
+#'
+#' @param x Crosstable
+#' @param label_separator [\code{character(1)}]\cr If not NULL (default), will split labels into main- and sub-questions and create figure caption.
+#' @param docx_template  [\code{character(1) || officer::read_docx()}]\cr
+#' @param caption_style [\code{character(1)}]\cr Template style to be used for formatting chart. Defaults to "Normal".
+#' @param caption_autonum Object obtained from \link[officer]{run_autonum}.
+#' @param font_family [\code{character(1)}]\cr Office font family. Defaults to "Arial". See ?officer::fp_text() for options.
+#' @param font_size [\code{integer(1)}]\cr Font size for all text.
+#' @param topcaption [\code{logical(1)}]\cr Place caption above (TRUE, default) or below table.
+#' @importFrom flextable border_inner_h border_remove hline_bottom font fontsize add_footer_lines set_caption body_add_flextable
+#' @importFrom officer fp_border
+#' @importFrom dplyr mutate
+#' @importFrom stringr str_replace
+#' @importFrom crosstable as_flextable
+#' @return rdocx object, which can be saved with officer:::print.rdocx()
+#' @export
+#'
+#' @examples
+#' library(crosstable)
+#' library(dplyr)
+#' library(officer)
+#' crosstable::crosstable(ex_survey1, b_1:b_3, percent_pattern = "{p_col}") %>%
+#'   crosstable::pivot_crosstable() %>%
+#'   crosstable_to_apa(label_separator=" - ") %>%
+#'   print(target = "test.docx")
+#'   file.remove("test.docx")
+crosstable_to_apa <- function(x,
+                              label_separator = NULL,
+                              docx_template = NULL,
+                              caption_style = NULL,
+                              font_size = 11,
+                              font_family = "Times New Roman",
+                              caption_autonum = NULL,
+                              topcaption = TRUE) {
+  docx_file <- use_docx(docx_template = docx_template)
+  if(!is.null(label_separator)) {
+    main_question <- get_main_question2(x$label, label_separator = label_separator)
+
+
+    sep_pat <- paste0("^(.*)", label_separator, "(.*)$")
+    y <- dplyr::mutate(.data = x,
+                       label = stringr::str_replace(string = .data$label,
+                                                    pattern = .env$sep_pat,
+                                                    replacement = "\\2"))
+  }
+  y <- crosstable::as_flextable(y)
+  y <- flextable::border_remove(y)
+  y <- flextable::border_inner_h(x = y, border = officer::fp_border(), part = "all")
+  y <- flextable::hline_top(x = y, border = officer::fp_border(), part = "all")
+  y <- flextable::hline_bottom(x = y, border = officer::fp_border(), part = "all")
+  y <- flextable::font(x = y, fontname = font_family, part = "all")
+  y <- flextable::fontsize(x = y, size = font_size, part = "all")
+  y <- flextable::add_footer_lines(x = y, values = "Note. N=", top = FALSE)
+  if(!is.null(label_separator)) {
+    y <- flextable::set_caption(x = y,
+                                caption = main_question,
+                                autonum = caption_autonum,
+                                word_stylename = caption_style,
+                                fp_p = caption_style)
+  }
+  flextable::body_add_flextable(x = docx_file, value = y, align = "left",
+                                split = FALSE, topcaption = topcaption)
+  docx_file
+}
 
 
 #' Tabulate categorical variables with proportions
@@ -103,110 +168,110 @@ crosstable_list <- function(data, col, by, showNA = "ifany") {
 #' tab_cat_prop(ex_survey1, xvars = "x1_sex", yvars = paste0("b_", 1:3))
 
 tab_cat_prop <- function(data,
-						 yvars=NULL,
-						 xvars=NULL,
-						 var_labels=2,
-						 val_labels=FALSE,
-						 prop=TRUE,
-						 prefix="v",
-						 na.rm.yvar=FALSE,
-						 na.rm.xvar=FALSE) {
+                         yvars=NULL,
+                         xvars=NULL,
+                         var_labels=2,
+                         val_labels=FALSE,
+                         prop=TRUE,
+                         prefix="v",
+                         na.rm.yvar=FALSE,
+                         na.rm.xvar=FALSE) {
 
 
-	if(!var_labels %in% 0:2) rlang::abort("var_labels must be either 0, 1 or 2")
-	if(!is.logical(prop)) rlang::abort("prop must be logical, TRUE or FALSE")
-	if(!is.logical(val_labels)) rlang::abort("val_labels must be logical, TRUE or FALSE")
-	if(!is.logical(na.rm.yvar)) rlang::abort("na.rm must be logical, TRUE or FALSE")
-	if(!is.logical(na.rm.xvar)) rlang::abort("na.rm must be logical, TRUE or FALSE")
-	if(is.null(yvars) && !is.null(xvars)) rlang::abort("yvars must be specified if xvars is specified.")
-	if(is.null(yvars)) yvars <- names(data)
+  if(!var_labels %in% 0:2) rlang::abort("var_labels must be either 0, 1 or 2")
+  if(!is.logical(prop)) rlang::abort("prop must be logical, TRUE or FALSE")
+  if(!is.logical(val_labels)) rlang::abort("val_labels must be logical, TRUE or FALSE")
+  if(!is.logical(na.rm.yvar)) rlang::abort("na.rm must be logical, TRUE or FALSE")
+  if(!is.logical(na.rm.xvar)) rlang::abort("na.rm must be logical, TRUE or FALSE")
+  if(is.null(yvars) && !is.null(xvars)) rlang::abort("yvars must be specified if xvars is specified.")
+  if(is.null(yvars)) yvars <- names(data)
 
-	yvars <- rlang::set_names(yvars)
+  yvars <- rlang::set_names(yvars)
 
-	out <-
-		purrr::map_dfr(
-			.x = yvars,
-			.id = "yvar",
-			.f = function(dep) {
+  out <-
+    purrr::map_dfr(
+      .x = yvars,
+      .id = "yvar",
+      .f = function(dep) {
 
-				if(is.null(data[[dep]])) rlang::abort(c(i="Unable to find yvars variable", x=dep))
+        if(is.null(data[[dep]])) rlang::abort(c(i="Unable to find yvars variable", x=dep))
 
-				if(!is.null(xvars)) {
-					xvars <- rlang::set_names(xvars)
-					purrr::map_dfr(xvars, .id = "xvar", .f = function(indep) {
-						if(is.null(data[[indep]])) rlang::abort(c(i="Unable to find xvars variable", x=indep))
+        if(!is.null(xvars)) {
+          xvars <- rlang::set_names(xvars)
+          purrr::map_dfr(xvars, .id = "xvar", .f = function(indep) {
+            if(is.null(data[[indep]])) rlang::abort(c(i="Unable to find xvars variable", x=indep))
 
-						out <-
-							dplyr::count(data,
-										 yvar_cat = .data[[dep]],
-										 xvar_cat = .data[[indep]],
-										 name = ".n")
-						if(na.rm.xvar) out <- out[!is.na(out$xvar_cat), ]
-						if(na.rm.yvar) out <- out[!is.na(out$yvar_cat), ]
-						if(prop) {
-							out <- dplyr::group_by(out, .data$xvar_cat)
-							out <- dplyr::mutate(out, .n=.data$.n/sum(.data$.n, na.rm = TRUE))
-							out <- dplyr::ungroup(out)
-						}
-						y_label <- attr(data[[dep]], "label")
-						x_label <- attr(data[[indep]], "label")
-						out$yvar_label <-
-							if(!is.null(y_label)) c(dep,
-													paste0(dep, " - ", y_label),
-													y_label)[var_labels+1] else dep
-						out$xvar_label <-
-							if(!is.null(x_label)) c(indep,
-													paste0(indep, " - ", x_label),
-													x_label)[var_labels+1] else indep
+            out <-
+              dplyr::count(data,
+                           yvar_cat = .data[[dep]],
+                           xvar_cat = .data[[indep]],
+                           name = ".n")
+            if(na.rm.xvar) out <- out[!is.na(out$xvar_cat), ]
+            if(na.rm.yvar) out <- out[!is.na(out$yvar_cat), ]
+            if(prop) {
+              out <- dplyr::group_by(out, .data$xvar_cat)
+              out <- dplyr::mutate(out, .n=.data$.n/sum(.data$.n, na.rm = TRUE))
+              out <- dplyr::ungroup(out)
+            }
+            y_label <- attr(data[[dep]], "label")
+            x_label <- attr(data[[indep]], "label")
+            out$yvar_label <-
+              if(!is.null(y_label)) c(dep,
+                                      paste0(dep, " - ", y_label),
+                                      y_label)[var_labels+1] else dep
+            out$xvar_label <-
+              if(!is.null(x_label)) c(indep,
+                                      paste0(indep, " - ", x_label),
+                                      x_label)[var_labels+1] else indep
 
-						if(val_labels) {
-							.w <- attr(data[[dep]], "labels")
-							.w <- data.frame(yvar_cat=unname(.w),
-											 yvar_val_label=names(.w))
-							out <- merge.data.frame(x = out, y = .w, by="yvar_cat")
-						}
-						out
-					})
+            if(val_labels) {
+              .w <- attr(data[[dep]], "labels")
+              .w <- data.frame(yvar_cat=unname(.w),
+                               yvar_val_label=names(.w))
+              out <- merge.data.frame(x = out, y = .w, by="yvar_cat")
+            }
+            out
+          })
 
-				} else {
+        } else {
 
 
-					out <- dplyr::count(data,
-										yvar_cat=.data[[dep]],
-										name = ".n")
-					if(na.rm.yvar) out <- out[!is.na(out$yvar_cat), ]
-					if(prop) out$.n <- out$.n/sum(out$.n, na.rm = TRUE)
-					y_label <- attr(data[[dep]], "label")
-					out$yvar_label <-
-						if(!is.null(y_label)) c(dep,
-												paste0(dep, " - ", y_label),
-												y_label)[var_labels+1] else dep
-					if(val_labels) {
-						.w <- attr(data[[dep]], "labels")
-						.w <- data.frame(yvar_cat=unname(.w),
-										 yvar_val_label=names(.w))
-						out <- merge.data.frame(x = out, y = .w, by="yvar_cat")
-					}
-					out
-				}
-			})
+          out <- dplyr::count(data,
+                              yvar_cat=.data[[dep]],
+                              name = ".n")
+          if(na.rm.yvar) out <- out[!is.na(out$yvar_cat), ]
+          if(prop) out$.n <- out$.n/sum(out$.n, na.rm = TRUE)
+          y_label <- attr(data[[dep]], "label")
+          out$yvar_label <-
+            if(!is.null(y_label)) c(dep,
+                                    paste0(dep, " - ", y_label),
+                                    y_label)[var_labels+1] else dep
+          if(val_labels) {
+            .w <- attr(data[[dep]], "labels")
+            .w <- data.frame(yvar_cat=unname(.w),
+                             yvar_val_label=names(.w))
+            out <- merge.data.frame(x = out, y = .w, by="yvar_cat")
+          }
+          out
+        }
+      })
 
-	if(val_labels) {
-		out$yvar_cat <- out$yvar_val_label
-		out$yvar_val_label <- NULL
-	}
-	out <- tidyr::separate(out, col = dplyr::all_of("yvar_label"),
-						   into=c("yvar_group_label", "yvar_part_label"),
-						   sep=" - ")
-	out <- tidyr::separate(out, col = dplyr::all_of("yvar"),
-						   into=c("yvar_group", "yvar_part"),
-						   sep="_", remove = F)
-	if(!is.null(xvars)) {
-		out <- tidyr::separate(out, col = dplyr::all_of("xvar_label"),
-							   into=c("xvar_group_label", "xvar_label"),
-							   sep=" - ", remove = F)
-	}
-	out
+  if(val_labels) {
+    out$yvar_cat <- out$yvar_val_label
+    out$yvar_val_label <- NULL
+  }
+  out <- tidyr::separate(out, col = dplyr::all_of("yvar_label"),
+                         into=c("yvar_group_label", "yvar_part_label"),
+                         sep=" - ")
+  out <- tidyr::separate(out, col = dplyr::all_of("yvar"),
+                         into=c("yvar_group", "yvar_part"),
+                         sep="_", remove = F)
+  if(!is.null(xvars)) {
+    out <- tidyr::separate(out, col = dplyr::all_of("xvar_label"),
+                           into=c("xvar_group_label", "xvar_label"),
+                           sep=" - ", remove = F)
+  }
+  out
 }
 
 # tab_cat_prop <- function(data,
@@ -330,12 +395,12 @@ tab_cat_prop <- function(data,
 #'
 #' @examples tab_cat_prop_to_table(tab_cat_prop(ex_survey1[,paste0("b_", 1:3)]))
 tab_cat_prop_to_table <- function(data, prefix="") {
-	tidyr::pivot_wider(data = data,
-					   # id_cols = dplyr::all_of(c("yvar", "yvar_label",
-					   # 						  if(!is.null(data$xvars)) c("xvar", "xvar_label",  "xvar_cat"))),
-					   names_from = dplyr::all_of("yvar_cat"),
-					   names_prefix = prefix,
-					   values_from = dplyr::all_of(".n"))
+  tidyr::pivot_wider(data = data,
+                     # id_cols = dplyr::all_of(c("yvar", "yvar_label",
+                     # 						  if(!is.null(data$xvars)) c("xvar", "xvar_label",  "xvar_cat"))),
+                     names_from = dplyr::all_of("yvar_cat"),
+                     names_prefix = prefix,
+                     values_from = dplyr::all_of(".n"))
 }
 
 
