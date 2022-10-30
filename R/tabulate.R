@@ -82,7 +82,8 @@ crosstable_list <- function(data, col, by, showNA = "ifany") {
 #' @param x Crosstable
 #' @param label_separator [\code{character(1)}]\cr If not NULL (default), will split labels into main- and sub-questions and create figure caption.
 #' @param docx_template  [\code{character(1) || officer::read_docx()}]\cr
-#' @param caption_style [\code{character(1)}]\cr Template style to be used for formatting chart. Defaults to "Normal".
+#' @param caption_style [\code{character(1)}]\cr Word template style to be used for formatting chart. Defaults to "Normal".
+#' @param caption_fp Alternative approach to specify formatting. See officer::fp_par().
 #' @param caption_autonum Object obtained from \link[officer]{run_autonum}.
 #' @param font_family [\code{character(1)}]\cr Office font family. Defaults to "Arial". See ?officer::fp_text() for options.
 #' @param font_size [\code{integer(1)}]\cr Font size for all text.
@@ -108,6 +109,7 @@ crosstable_to_apa <- function(x,
                               label_separator = NULL,
                               docx_template = NULL,
                               caption_style = NULL,
+                              caption_fp = NULL,
                               font_size = 11,
                               font_family = "Times New Roman",
                               caption_autonum = NULL,
@@ -123,20 +125,31 @@ crosstable_to_apa <- function(x,
                                                     pattern = .env$sep_pat,
                                                     replacement = "\\2"))
   }
+
+  caption_fp <-
+    if(!is.null(caption_fp)) {
+      caption_fp
+      } else {
+      officer::fp_text(font.family = font_family)
+    }
+
   y <- crosstable::as_flextable(y)
   y <- flextable::border_remove(y)
-  y <- flextable::border_inner_h(x = y, border = officer::fp_border(), part = "all")
+  # y <- flextable::hline(x = y, border = officer::fp_border(), part = "all")
   y <- flextable::hline_top(x = y, border = officer::fp_border(), part = "all")
   y <- flextable::hline_bottom(x = y, border = officer::fp_border(), part = "all")
   y <- flextable::font(x = y, fontname = font_family, part = "all")
   y <- flextable::fontsize(x = y, size = font_size, part = "all")
-  y <- flextable::add_footer_lines(x = y, values = "Note. N=", top = FALSE)
+  y <- flextable::add_footer_lines(x = y,
+                                   values = paste0("Note. N="),
+                                   top = FALSE)
   if(!is.null(label_separator)) {
     y <- flextable::set_caption(x = y,
+                                align_with_table = TRUE,
                                 caption = main_question,
                                 autonum = caption_autonum,
                                 word_stylename = caption_style,
-                                fp_p = caption_style)
+                                fp_p = caption_fp)
   }
   flextable::body_add_flextable(x = docx_file, value = y, align = "left",
                                 split = FALSE, topcaption = topcaption)

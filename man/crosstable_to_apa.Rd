@@ -9,6 +9,7 @@ crosstable_to_apa(
   label_separator = NULL,
   docx_template = NULL,
   caption_style = NULL,
+  caption_fp = NULL,
   font_size = 11,
   font_family = "Times New Roman",
   caption_autonum = NULL,
@@ -22,7 +23,9 @@ crosstable_to_apa(
 
 \item{docx_template}{[\code{character(1) || officer::read_docx()}]\cr}
 
-\item{caption_style}{[\code{character(1)}]\cr Template style to be used for formatting chart. Defaults to "Normal".}
+\item{caption_style}{[\code{character(1)}]\cr Word template style to be used for formatting chart. Defaults to "Normal".}
+
+\item{caption_fp}{Alternative approach to specify formatting. See officer::fp_par().}
 
 \item{font_size}{[\code{integer(1)}]\cr Font size for all text.}
 
