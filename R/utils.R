@@ -307,17 +307,30 @@ hex_bw <- function(hex_code) {
 # 	}
 # }
 get_colour_set <-
-  function(n_colours_needed, user_colour_set=NULL, seed=1) {
+  function(n_colours_needed, user_colour_set=NULL, seed=1,
+           call = rlang::caller_env()) {
 
-	if(!is.null(user_colour_set) &&
-	   length(user_colour_set) >= n_colours_needed &&
-	   all(is_colour(user_colour_set))) {
-			x <- seq_along(user_colour_set)
-			subset_vector(vec = user_colour_set, set = "maximize", maximize_n = n_colours_needed)
-	} else if(n_colours_needed <= 12) {
-		set.seed(seed)
-		sample(x = RColorBrewer::brewer.pal(n = 12, name = "Paired"), size = n_colours_needed)
-	} else viridisLite::viridis(n = n_colours_needed)
+	if(!is.null(user_colour_set)) {
+	  if(!all(is_colour(user_colour_set))) {
+	    cli::cli_abort(c(x="Provided colours are not valid colours.",
+	                     i="Problems with {{user_colour_set[!is_colour(user_colour_set)]}}."))
+	  }
+
+	  if(length(user_colour_set) >= n_colours_needed) {
+	    x <- seq_along(user_colour_set)
+	    return(subset_vector(vec = user_colour_set, set = "maximize", maximize_n = n_colours_needed))
+
+	  } else {
+	    cli::cli_warn("Fewer colours provided in colour palette than needed. Defaulting to RColorBrewer.")
+	  }
+  }
+  if(n_colours_needed <= 12) {
+		withr::with_seed(seed = seed, code = {
+		  return(sample(x = RColorBrewer::brewer.pal(n = 12, name = "Paired"), size = n_colours_needed))
+		})
+	} else {
+	  viridisLite::viridis(n = n_colours_needed)
+	}
 }
 
 

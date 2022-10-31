@@ -59,6 +59,22 @@ test_that("prepare_mschart", {
       sort_by = "value", desc = T) %>%
       dplyr::slice(1) %>% dplyr::pull(value),
     expected = 60)
+
+
+  testthat::expect_error(
+    surveyreport:::prepare_mschart_data(
+      data = ex_survey1,
+      cols = a_1:a_9,
+      by = b_1:b_3),
+    regexp = "Too many columns provided for `by`")
+
+  testthat::expect_error(
+    surveyreport:::prepare_mschart_data(
+      data = ex_survey1,
+      cols = a_1:a_9,
+      by = x1_sex),
+    regexp = "Multiple columns for `cols` and `by` are not allowed")
+
 })
 #########################################################
 

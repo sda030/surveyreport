@@ -53,6 +53,10 @@ prepare_mschart_data <-
     } else if(ncol(dplyr::select(.data = data, {{by}})) > 1L) {
       cli::cli_abort(c("Too many columns provided for {.arg by}.",
                        i="Only 1 by-column is currently allowed."))
+    } else if(ncol(dplyr::select(.data = data, {{by}})) == 1L &&
+              ncol(dplyr::select(.data = data, {{cols}})) > 1L) {
+      cli::cli_abort(c("Multiple columns for {.arg cols} and {.arg by} are not allowed."))
+
     }
 
     data <- dplyr::mutate(data,
@@ -185,7 +189,7 @@ create_chart_likert <-
     colour_palette <-
       get_colour_set(n_colours_needed = length(levels(data[[group]])),
                      user_colour_set = colour_palette,
-                     seed = seed)
+                     seed = seed, call=rlang::caller_env())
 
     colour_palette <-
       rlang::set_names(colour_palette, nm=levels(data[[group]]))
