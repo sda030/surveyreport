@@ -124,7 +124,7 @@ crosstable_to_apa <- function(x,
                        label = stringr::str_replace(string = .data$label,
                                                     pattern = .env$sep_pat,
                                                     replacement = "\\2"))
-  }
+  } else y <- x
 
   caption_fp <-
     if(!is.null(caption_fp)) {
