@@ -18,7 +18,7 @@ A data frame with 100 rows and 29 variables:
   \item{a_7}{Do you consent to the following? - Agreement #7}
   \item{a_8}{Do you consent to the following? - Agreement #8}
   \item{a_9}{Do you consent to the following? - Agreement #9}
-  \item{b_1}{How much do you like living in - Bejing}
+  \item{b_1}{How much do you like living in - Beijing}
   \item{b_2}{How much do you like living in - Brussels}
   \item{b_3}{How much do you like living in - Budapest}
   \item{c_1}{How many years of experience do you have in - Company A}
@@ -49,10 +49,11 @@ ex_survey1
 }
 \description{
 A dataset containing fake respondents' answers to survey questions.
-the first two, x_sex and x_human, are intended to be independent variables,
-whereas the remaning are dependent. The separator between items and groups
-is the underscore _ (i.e. a_1-a_9 => a + 1-9) whereas the separator for
-labels is the hyphen. The latter corresponds with the default in SurveyXact.
+The first two, x_sex and x_human, are intended to be independent variables,
+whereas the remaining are dependent. The underscore _ in variable names
+separates item groups (prefix) from items (suffix) (i.e. a_1-a_9 => a + 1-9),
+ whereas ' - ' separates the same for labels.
+ The latter corresponds with the default in SurveyXact.
 }
 \seealso{
 ex_survey2

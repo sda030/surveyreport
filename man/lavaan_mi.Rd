@@ -7,16 +7,16 @@
 lavaan_mi(data, cols, group, ...)
 }
 \arguments{
-\item{data}{Dataset}
+\item{data}{data.frame or tibble.}
 
 \item{cols}{Columns as character vector}
 
-\item{group}{Groupin variable as string}
+\item{group}{Grouping variable as string}
 
 \item{...}{Not in use}
 }
 \value{
-Tibble
+A tibble.
 }
 \description{
 Simply Run Measurement Invariance Model in lavaan

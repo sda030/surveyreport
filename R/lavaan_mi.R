@@ -1,11 +1,11 @@
 #' Simply Run Measurement Invariance Model in lavaan
 #'
-#' @param data Dataset
+#' @param data data.frame or tibble.
 #' @param cols Columns as character vector
-#' @param group Groupin variable as string
+#' @param group Grouping variable as string
 #' @param ... Not in use
 #'
-#' @return Tibble
+#' @return A tibble.
 #' @importFrom lavaan cfa fitmeasures lavTestLRT
 #' @importFrom semTools measEq.syntax
 #' @importFrom labelled remove_val_labels

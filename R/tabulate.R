@@ -101,10 +101,7 @@ crosstable_list <- function(data, col, by, showNA = "ifany") {
 #' library(dplyr)
 #' library(officer)
 #' crosstable::crosstable(ex_survey1, b_1:b_3, percent_pattern = "{p_col}") %>%
-#'   crosstable::pivot_crosstable() %>%
-#'   crosstable_to_apa(label_separator=" - ") %>%
-#'   print(target = "test.docx")
-#'   file.remove("test.docx")
+#'   crosstable_to_apa(label_separator=" - ")
 crosstable_to_apa <- function(x,
                               label_separator = NULL,
                               docx_template = NULL,

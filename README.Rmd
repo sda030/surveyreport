@@ -23,7 +23,7 @@ knitr::opts_chunk$set(
 
 <!-- badges: end -->
 
-Produces highly customizable figures, text, analyses and reports for a batch of possible dpendent-independent relations of possible interest.
+Produces highly customizable figures, text, analyses and reports for a batch of possible dependent-independent relations of possible interest.
 
 ## Installation
 
@@ -36,7 +36,7 @@ devtools::install_github("sda030/surveyreport")
 
 ## Use
 
-Please see the documentation at []
+Please see the [documentation](https://sda030.github.io/surveyreport/).
 
 ## Code of Conduct
 
