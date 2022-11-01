@@ -27,3 +27,19 @@ testthat::test_that("get_colour_set", {
                               "#CBE11EFF", "#FDE725FF"))
 
 })
+
+
+
+testthat::test_that("col_to_binaries", {
+  library(dplyr)
+  library(officer)
+  test <-
+    ex_survey1 %>%
+    col_to_binaries(col = b_3, label_separator = "  -  ") %>%
+    slice(1) %>%
+    pull(`b_3___A bit`)
+  testthat::expect_equal({
+    as.vector(test)}, expected = 0L)
+  testthat::expect_equal(attr(test, "label"),
+                         expected = "How much do you like living in - Budapest  -  A bit")
+  })

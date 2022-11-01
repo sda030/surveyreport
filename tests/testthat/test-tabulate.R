@@ -9,7 +9,7 @@ testthat::test_that("apa formatter", {
       crosstable_to_apa(label_separator=" - ", font_family = "Times New Roman", topcaption = F)
       }, class = "rdocx", exact = TRUE)
 
-    withr::with_tempfile(new = "test", code = {
+    x<-withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 

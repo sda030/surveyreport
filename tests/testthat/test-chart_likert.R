@@ -117,7 +117,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
                         height_fixed = 1
                         )
   }, class = "rdocx", exact = TRUE)
-  withr::with_tempfile(new = "test", code = {
+  x <- withr::with_tempfile(new = "test", code = {
     print(test, target = "test.docx")
   }, fileext = ".docx")
 
@@ -133,7 +133,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
     ex_survey1 %>%
     report_chart_likert(cols = a_1:a_9)
   }, class = "rdocx", exact = TRUE)
-  withr::with_tempfile(new = "test", code = {
+  x <- withr::with_tempfile(new = "test", code = {
     print(test, target = "test.docx")
   }, fileext = ".docx")
 
@@ -144,7 +144,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
       ex_survey1 %>%
       report_chart_likert(cols = a_1:a_9, showNA = "no")
 }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 
@@ -158,7 +158,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
       labelled::copy_labels_from(from = ex_survey1) %>%
       report_chart_likert(cols = p_1:p_4)
     }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 
@@ -178,7 +178,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
                           height_per_col = .3,
                           height_fixed = 1)
     }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 
@@ -193,7 +193,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
       labelled::copy_labels_from(from = ex_survey1) %>%
       report_chart_likert(cols = p_1:p_4)
     }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 
@@ -208,7 +208,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
       labelled::copy_labels_from(from = ex_survey1) %>%
       report_chart_likert(cols = p_1:p_4)
     }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 
@@ -221,7 +221,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
       ex_survey1 %>%
       report_chart_likert(cols = a_1:a_9, digits = 0L, percent_sign = FALSE, font_family = "Calibri")
     }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 
@@ -234,7 +234,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
       ex_survey1 %>%
       report_chart_likert(cols = a_1:a_9, sort_by = "value", desc=FALSE, vertical=FALSE, showNA = "no")
     }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 
@@ -249,7 +249,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
       report_chart_likert(cols = a_1:a_9, sort_by = "value", desc=T, vertical=FALSE, showNA = "no",
                           what = "fre")
     }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 
@@ -263,7 +263,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
       report_chart_likert(cols = b_1:b_3, sort_by = "value", desc=T, vertical=FALSE, showNA = "no",
                           what = "fre")
     }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 
@@ -275,7 +275,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
       ex_survey1 %>%
       report_chart_likert(cols = b_1:b_3, sort_by = "A bit", desc=FALSE, vertical=FALSE, showNA = "no")
     }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 
@@ -287,7 +287,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
       ex_survey1 %>%
       report_chart_likert(cols = b_1:b_3, sort_by = c("A bit", "A lot"), desc=FALSE, vertical=FALSE, showNA = "no")
     }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 
@@ -299,7 +299,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
         ex_survey1 %>%
         report_chart_likert(cols = b_1:b_3, sort_by = c("A bit", "A lot"), desc=FALSE, vertical=FALSE, showNA = "no")
     }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 
@@ -311,7 +311,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
         ex_survey1 %>%
         report_chart_likert(cols = b_1:b_3, hide_label_if_below = 10)
     }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 
@@ -322,7 +322,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
         ex_survey1 %>%
         report_chart_likert(cols = b_1:b_3, label_separator = " - ")
     }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 
@@ -333,7 +333,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
         ex_survey1 %>%
         report_chart_likert(cols = b_1, by = x1_sex)
     }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 
@@ -344,7 +344,7 @@ testthat::test_that("report_chart_likert(what='percent')", {
         ex_survey1 %>%
         report_chart_likert(cols = b_1, by = x1_sex, sort_by = "A lot", desc=T)
     }, class = "rdocx", exact = TRUE)
-    withr::with_tempfile(new = "test", code = {
+    x <- withr::with_tempfile(new = "test", code = {
       print(test, target = "test.docx")
     }, fileext = ".docx")
 

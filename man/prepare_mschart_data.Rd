@@ -6,7 +6,7 @@
 \usage{
 prepare_mschart_data(
   data,
-  cols,
+  cols = tidyselect::everything(),
   by = NULL,
   what = "percent",
   showNA = "ifany",

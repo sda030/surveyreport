@@ -4,7 +4,12 @@
 \alias{get_colour_set}
 \title{Provide A Colour Set for A Number of Requested Colours}
 \usage{
-get_colour_set(n_colours_needed, user_colour_set = NULL, seed = 1)
+get_colour_set(
+  n_colours_needed,
+  user_colour_set = NULL,
+  seed = 1,
+  call = rlang::caller_env()
+)
 }
 \arguments{
 \item{n_colours_needed}{Number of colours needed.}
@@ -12,6 +17,8 @@ get_colour_set(n_colours_needed, user_colour_set = NULL, seed = 1)
 \item{user_colour_set}{User-supplied default palette.}
 
 \item{seed}{Random seed for sampling.}
+
+\item{call}{Caller function if used from inside another function.}
 }
 \value{
 A colour set as character vector.

@@ -277,6 +277,7 @@ hex_bw <- function(hex_code) {
 #' @param n_colours_needed Number of colours needed.
 #' @param user_colour_set User-supplied default palette.
 #' @param seed Random seed for sampling.
+#' @param call Caller function if used from inside another function.
 #' @importFrom RColorBrewer brewer.pal.info brewer.pal
 #' @importFrom stats median
 #' @return A colour set as character vector.
@@ -556,6 +557,7 @@ get_main_question2 <-
                        i="{.arg x} is {.cls {class(x)}}."),
                      call = call)
     }
+
     x <-
       stringr::str_replace(string = x,
                            pattern = paste0("(^.*)", label_separator, "(.*$)"),
@@ -564,12 +566,79 @@ get_main_question2 <-
     stringr::str_c(x, collapse="\n")
   }
 
-set_var_labels <- function(data) {
+set_var_labels <- function(data, cols=tidyselect::everything(), overwrite=TRUE) {
+  cols_enq <- rlang::enquo(arg = cols)
+  cols_pos <- tidyselect::eval_select(expr = cols_enq, data = data)
   col_names <- colnames(data)
-  data <- purrr::map(seq_len(ncol(data)), ~{
-    attr(data[[.x]], "label") <- col_names[.x]
-    data[[.x]]
-  })
+  data <-
+    purrr::map(seq_len(ncol(data)), ~{
+      if(
+        .x %in% cols_pos &&
+        (overwrite || is.null(attr(data[[.x]], "label")))
+      ) {
+        attr(data[[.x]], "label") <- col_names[.x]
+      }
+      data[[.x]]
+    })
   names(data) <- col_names
   tibble::as_tibble(x = data)
 }
+
+
+#' Mutate a (factor, character, integer, etc) column into multiple columns,
+#'
+#' @description Easily mutate a single column into multiple columns (~dummies+1),
+#' while retaining variable labels and order of the original factor variable.
+#'
+#' @param data Data frame or tibble
+#' @param col Single column. Tidy-select.
+#' @param var_separator [\code{character(1)>0}]\cr Separator between old variable name and categories.
+#' @param label_separator  [\code{character(1)>0}]\cr Separator between old label name and new label part.
+#'
+#' @return Original data frame with the extra columns attached.
+#' @export
+#'
+#' @examples
+#' library(dplyr)
+#' library(officer)
+#' ex_survey1 %>%
+#'   col_to_binaries(col = b_3, label_separator = "  -  ") %>%
+#'   mutate(across(matches("b_3_"), .fns = ~1-.x)) %>% # Flip categories
+#'   report_chart_likert(cols = matches("b_3_"), what = "freq") %>%
+#'   print(target="test.docx")
+col_to_binaries <- function(data, col, var_separator = "___", label_separator = " - ") {
+  if(length(dplyr::select(data, {{col}}))>1L) {
+    cli::cli_abort(c("Only 1 column is currently allowed, for your protection.",
+                     i="You have provided {length(dplyr::select(data, {{col}})} columns."))
+  }
+  col_enq <- rlang::enquo(arg = col)
+  col_nm <- rlang::as_name(x = col_enq)
+  col_pos <- tidyselect::eval_select(expr = col_enq, data = data)
+  col_label <- attr(data[[col_pos]], "label")
+
+  if(is.factor(data[,col_pos]) | is.ordered(data[,col_pos]) |
+     is.integer(data[, col_pos]) | is.numeric(data[, col_pos])) {
+    data2 <-
+      data |>
+      dplyr::arrange(as.numeric({{col}}))
+  } else {
+    data2 <-
+      data |>
+      dplyr::arrange({{col}})
+  }
+  data3 <-
+    data2 |>
+    dplyr::select({{col}}) |>
+    dplyr::mutate(`_dummy` = 1L,
+                  `_id` = seq_len(nrow(data))) |>
+    tidyr::pivot_wider(names_from = {{col}},
+                       values_from = .data$`_dummy`,
+                       values_fill = 0L,
+                       names_glue = paste0(col_nm, var_separator, "{.name}")) |> #
+    dplyr::select(-.data$`_id`)
+
+
+  labelled::var_label(x = data3) <-
+    paste0(col_label, label_separator, unique(data2[[col_pos]]))
+  dplyr::bind_cols(data2, data3)
+  }

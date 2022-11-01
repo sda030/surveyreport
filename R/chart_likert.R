@@ -22,7 +22,7 @@
 #' @return Dataset
 prepare_mschart_data <-
   function(data,
-           cols,
+           cols = tidyselect::everything(),
            by = NULL,
            what = "percent",
            showNA = "ifany",
@@ -199,8 +199,8 @@ create_chart_likert <-
     }
 
     if(length(levels(data[[group]]))==2L &&
-       !is.null(colour_2nd_binary_cat)
-       && is_colour(colour_2nd_binary_cat)) {
+       !is.null(colour_2nd_binary_cat) &&
+       is_colour(colour_2nd_binary_cat)) {
       colour_palette[2] <- colour_2nd_binary_cat
     }
 
@@ -223,9 +223,13 @@ create_chart_likert <-
                               group = group, labels = labels)
 
     if(grepl("per", what)) {
-      m <- mschart::as_bar_stack(x = m,
-                                 dir = if(vertical) "vertical" else "horizontal",
-                                 percent = TRUE)
+      m <- mschart::as_bar_stack(x = m, percent = TRUE)
+    }
+    if(grepl("fre", what)) { # Silly way due to poor programming in mschart
+      m <- mschart::chart_settings(x = m, dir = if(vertical) "vertical" else "horizontal",
+                                   overlap = -40)
+    } else {
+      m <- mschart::chart_settings(x = m, dir = if(vertical) "vertical" else "horizontal")
     }
     m <- mschart::chart_data_fill(x = m, values = colour_palette)
     m <- mschart::chart_data_stroke(x = m, values = colour_palette)
@@ -396,8 +400,16 @@ report_chart_likert <-
     if(!is.null(label_separator) &&
        rlang::is_bare_character(x = label_separator, n = 1)) {
 
+
+      raw_labels <-
+        purrr::map_chr(cols_pos, ~{
+          y<-attr(data[[.x]], "label")
+          if(!is.null(y)) y else NA
+        })
+
+
       main_question <-
-        get_main_question2(x = data_out$label,
+        get_main_question2(x = raw_labels,
                           label_separator = label_separator)
 
       caption_style <-

@@ -11,6 +11,10 @@ output:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
+## Fixes
+- import officer:::print.rdocx, etc
+
 # Known bugs
 - mutate() has a bug where it drops the attributes
 
