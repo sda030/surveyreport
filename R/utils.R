@@ -616,7 +616,7 @@ col_to_binaries <- function(data, col, var_separator = "___", label_separator = 
   col_pos <- tidyselect::eval_select(expr = col_enq, data = data)
   col_label <- attr(data[[col_pos]], "label")
 
-  if(is.factor(data[,col_pos]) | is.ordered(data[,col_pos]) |
+  if(is.factor(data[, col_pos]) | is.ordered(data[, col_pos]) |
      is.integer(data[, col_pos]) | is.numeric(data[, col_pos])) {
     data2 <-
       data |>
@@ -632,10 +632,10 @@ col_to_binaries <- function(data, col, var_separator = "___", label_separator = 
     dplyr::mutate(`_dummy` = 1L,
                   `_id` = seq_len(nrow(data))) |>
     tidyr::pivot_wider(names_from = {{col}},
-                       values_from = .data$`_dummy`,
+                       values_from = tidyselect::all_of("_dummy"),
                        values_fill = 0L,
                        names_glue = paste0(col_nm, var_separator, "{.name}")) |> #
-    dplyr::select(-.data$`_id`)
+    dplyr::select(!tidyselect::all_of("_id"))
 
 
   labelled::var_label(x = data3) <-
