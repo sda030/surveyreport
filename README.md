@@ -25,6 +25,10 @@ install.packages("devtools")
 devtools::install_github("sda030/surveyreport")
 ```
 
+## Use
+
+Please see the documentation at \[\]
+
 ## Code of Conduct
 
 Please note that the surveyreport project is released with a
