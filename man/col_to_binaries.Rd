@@ -16,7 +16,7 @@ col_to_binaries(data, col, var_separator = "___", label_separator = " - ")
 \item{label_separator}{[\code{character(1)>0}]\cr Separator between old label name and new label part.}
 }
 \value{
-Original data frame with the extra columns attached.
+Original data frame with the binary columns attached, containing new labels.
 }
 \description{
 Easily mutate a single column into multiple columns (~dummies+1),
@@ -27,7 +27,5 @@ library(dplyr)
 library(officer)
 ex_survey1 \%>\%
   col_to_binaries(col = b_3, label_separator = "  -  ") \%>\%
-  mutate(across(matches("b_3_"), .fns = ~1-.x)) \%>\% # Flip categories
-  report_chart_likert(cols = matches("b_3_"), what = "freq") \%>\%
-  print(target="test.docx")
+  report_chart_likert(cols = matches("b_3_"), what = "freq")
 }

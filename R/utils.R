@@ -595,17 +595,14 @@ set_var_labels <- function(data, cols=tidyselect::everything(), overwrite=TRUE) 
 #' @param var_separator [\code{character(1)>0}]\cr Separator between old variable name and categories.
 #' @param label_separator  [\code{character(1)>0}]\cr Separator between old label name and new label part.
 #'
-#' @return Original data frame with the extra columns attached.
+#' @return Original data frame with the binary columns attached, containing new labels.
 #' @export
 #'
-#' @examples
-#' library(dplyr)
+#' @examples library(dplyr)
 #' library(officer)
 #' ex_survey1 %>%
 #'   col_to_binaries(col = b_3, label_separator = "  -  ") %>%
-#'   mutate(across(matches("b_3_"), .fns = ~1-.x)) %>% # Flip categories
-#'   report_chart_likert(cols = matches("b_3_"), what = "freq") %>%
-#'   print(target="test.docx")
+#'   report_chart_likert(cols = matches("b_3_"), what = "freq")
 col_to_binaries <- function(data, col, var_separator = "___", label_separator = " - ") {
   if(length(dplyr::select(data, {{col}}))>1L) {
     cli::cli_abort(c("Only 1 column is currently allowed, for your protection.",

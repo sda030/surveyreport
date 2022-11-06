@@ -9,11 +9,12 @@ crosstable_to_apa(
   label_separator = NULL,
   docx_template = NULL,
   caption_style = NULL,
-  caption_fp = NULL,
-  font_size = 11,
-  font_family = "Times New Roman",
+  body_style = NULL,
+  table_header_style = NULL,
+  footer_style = NULL,
   caption_autonum = NULL,
-  topcaption = TRUE
+  topcaption = TRUE,
+  return_docx = TRUE
 )
 }
 \arguments{
@@ -25,15 +26,20 @@ crosstable_to_apa(
 
 \item{caption_style}{[\code{character(1)}]\cr Word template style to be used for formatting chart. Defaults to "Normal".}
 
-\item{caption_fp}{Alternative approach to specify formatting. See officer::fp_par().}
+\item{body_style}{[\code{character(1)}]\cr Word style for table body cells.}
 
-\item{font_size}{[\code{integer(1)}]\cr Font size for all text.}
+\item{table_header_style}{[\code{character(1)}]\cr Word style for table header cells.}
 
-\item{font_family}{[\code{character(1)}]\cr Office font family. Defaults to "Arial". See ?officer::fp_text() for options.}
+\item{footer_style}{[\code{character(1)}]\cr Word style for table footer.}
 
 \item{caption_autonum}{Object obtained from \link[officer]{run_autonum}.}
 
 \item{topcaption}{[\code{logical(1)}]\cr Place caption above (TRUE, default) or below table.}
+
+\item{return_docx}{[\code{logical(1)}]\cr If FALSE, will return the table
+rather than a rdocx object with the table inside it. Set to TRUE (default)
+if piping multiple tables and charts together. Set to FALSE if you want to
+continue modify the table.}
 }
 \value{
 rdocx object, which can be saved with officer:::print.rdocx()
@@ -46,8 +52,5 @@ library(crosstable)
 library(dplyr)
 library(officer)
 crosstable::crosstable(ex_survey1, b_1:b_3, percent_pattern = "{p_col}") \%>\%
-  crosstable::pivot_crosstable() \%>\%
-  crosstable_to_apa(label_separator=" - ") \%>\%
-  print(target = "test.docx")
-  file.remove("test.docx")
+  crosstable_to_apa(label_separator=" - ")
 }

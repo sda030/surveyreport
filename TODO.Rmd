@@ -12,6 +12,14 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r,eval=FALSE}
+## Run when submitting for CRAN
+devtools::check_rhub(interactive = TRUE)
+devtools::release()
+
+
+```
+
 ## Fixes
 - import officer:::print.rdocx, etc
 
