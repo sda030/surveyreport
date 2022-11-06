@@ -12,7 +12,7 @@ while retaining variable labels and order of the original factor variable."><!--
     
     <a class="navbar-brand me-2" href="../index.html">surveyreport</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1.9001</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.1.9002</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -79,7 +79,7 @@ while retaining variable labels and order of the original factor variable.</p>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     
 
-<p>Original data frame with the extra columns attached.</p>
+<p>Original data frame with the binary columns attached, containing new labels.</p>
     </div>
 
     <div class="section level2">
@@ -96,9 +96,30 @@ while retaining variable labels and order of the original factor variable.</p>
 <span class="r-in"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ardata-fr.github.io/officeverse/" class="external-link">officer</a></span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">ex_survey1</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span></span>
 <span class="r-in"><span>  <span class="fu">col_to_binaries</span><span class="op">(</span>col <span class="op">=</span> <span class="va">b_3</span>, label_separator <span class="op">=</span> <span class="st">"  -  "</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/across.html" class="external-link">across</a></span><span class="op">(</span><span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">matches</a></span><span class="op">(</span><span class="st">"b_3_"</span><span class="op">)</span>, .fns <span class="op">=</span> <span class="op">~</span><span class="fl">1</span><span class="op">-</span><span class="va">.x</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> <span class="co"># Flip categories</span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="report_chart_likert.html">report_chart_likert</a></span><span class="op">(</span>cols <span class="op">=</span> <span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">matches</a></span><span class="op">(</span><span class="st">"b_3_"</span><span class="op">)</span>, what <span class="op">=</span> <span class="st">"freq"</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span></span>
-<span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span>target<span class="op">=</span><span class="st">"test.docx"</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu"><a href="report_chart_likert.html">report_chart_likert</a></span><span class="op">(</span>cols <span class="op">=</span> <span class="fu"><a href="https://tidyselect.r-lib.org/reference/starts_with.html" class="external-link">matches</a></span><span class="op">(</span><span class="st">"b_3_"</span><span class="op">)</span>, what <span class="op">=</span> <span class="st">"freq"</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> rdocx document with 2 element(s)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> * styles:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                 Normal              heading 1              heading 2 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            "paragraph"            "paragraph"            "paragraph" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              heading 3 Default Paragraph Font           Normal Table </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            "paragraph"            "character"                "table" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                No List                 strong               centered </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            "numbering"            "character"            "paragraph" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         table_template    Light List Accent 2            Titre 1 Car </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                "table"                "table"            "character" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            Titre 2 Car            Titre 3 Car          Image Caption </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            "character"            "character"            "paragraph" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          Table Caption     Table Professional                  toc 1 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            "paragraph"                "table"            "paragraph" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                  toc 2           Balloon Text    Texte de bulles Car </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            "paragraph"            "paragraph"            "character" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>           reference_id          graphic title            table title </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>            "character"            "paragraph"            "paragraph" </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> * Content at cursor location:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   level num_id text style_name content_type</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1    NA     NA          Normal    paragraph</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
