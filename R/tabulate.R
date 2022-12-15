@@ -99,7 +99,7 @@ crosstable_list <- function(data, col, by, showNA = "ifany") {
 #' @importFrom stringr str_replace
 #' @importFrom rlang %||%
 #' @importFrom crosstable as_flextable
-#' @return rdocx object, which can be saved with officer:::print.rdocx()
+#' @return rdocx object, which can be saved with print() after loading the officer-package
 #' @export
 #'
 #' @examples

@@ -42,7 +42,7 @@ if piping multiple tables and charts together. Set to FALSE if you want to
 continue modify the table.}
 }
 \value{
-rdocx object, which can be saved with officer:::print.rdocx()
+rdocx object, which can be saved with print() after loading the officer-package
 }
 \description{
 Title

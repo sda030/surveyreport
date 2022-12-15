@@ -289,16 +289,16 @@ create_chart_likert <-
 #' @importFrom stringr str_c str_replace
 #' @importFrom stats ave
 #' @importFrom purrr map_chr
-#' @return rdocx object, which can be saved with officer:::print.rdocx()
+#' @return rdocx object, which can be saved with print() after loading the officer-package
 #' @export
 #'
 #' @examples
 #' library(dplyr) # For piping
 #' library(officer) # To save the rdocx object to disk
 #' ex_survey1 %>%
-#'   report_chart_likert(cols = a_1:a_9) %>%
-#'   print(target = "test_docx_a19.docx")
-#' file.remove("test_docx_a19.docx")
+#'   report_chart_likert(cols = a_1:a_9) #%>%
+#'  # print(target = "test_docx_a19.docx")
+#' #file.remove("test_docx_a19.docx")
 #'
 #'
 #'   docx_template <-
@@ -324,8 +324,8 @@ create_chart_likert <-
 #'                        chart_formatting = chart_format,
 #'                        height_per_col = .3,
 #'                        height_fixed = 1)
-#' print(test_docx_b13, target = "test_docx_b13.docx")
-#' file.remove("test_docx_b13.docx")
+#' #print(test_docx_b13, target = "test_docx_b13.docx")
+#' #file.remove("test_docx_b13.docx")
 
 report_chart_likert <-
   function(data,
