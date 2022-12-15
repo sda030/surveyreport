@@ -15,6 +15,9 @@ handpick <- function(data, to_clipboard = FALSE) {
                    multiple=TRUE,
                    title='Pick columns in dataset',
                    graphics=TRUE)
-  dput(x)
-  if(to_clipboard) clipr::write_clip(content = x, object_type = "character", return_new = FALSE) else x
+  y <- dput(x)
+  if(to_clipboard) {
+    clipr::write_clip(content = as.character(deparse(x)), object_type = "character")
+    }
+  x
 }

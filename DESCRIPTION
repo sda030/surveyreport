@@ -1,7 +1,7 @@
 Type: Package
 Package: surveyreport
 Title: Automatic Reports in Office Format Based on Tidy Specifications
-Version: 0.1.1.9003
+Version: 0.1.1.9004
 Authors@R: 
     person(given = "Stephan", 
            family = "Daus", 
